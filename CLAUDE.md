@@ -1,6 +1,6 @@
 # Ghost Yards
 
-Hackathon NFL Big Data Bowl, Paris (AWS x NFL), 21/10/2026. Équipe de 3.
+Hackathon NFL Big Data Bowl, Paris (AWS x NFL), 21/10/2026. Équipe de 2.
 Gel du code **15h30**, soumission **16h00**. Thème : insights sur les receveurs (WR / TE / RB) à partir du tracking.
 Public : commentateurs et spectateurs. Jury : pertinence sportive, exécution technique, communication, originalité.
 Priorité : un résultat **juste et livré à temps**. Si un point bloque plus de 10 min, simplifier.
