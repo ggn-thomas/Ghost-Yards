@@ -5,7 +5,6 @@ import { GhostLogo } from './Ghost.jsx'
 const POSITIONS = ['WR', 'TE', 'RB']
 const POS_LABEL = { WR: 'Wide receivers', TE: 'Tight ends', RB: 'Running backs' }
 
-const DECISION_CLASS = { 'Bon choix': 'good', Discutable: 'meh', 'Mauvais choix': 'bad' }
 
 // Cases de la matrice décision × exécution (les « Discutable » sont exclus côté algo).
 const MATRIX_CELLS = [
@@ -102,9 +101,7 @@ export default function App() {
           <nav className="mainnav" aria-label="Sections">
             <a href="#receveurs">Receveurs</a>
             <a href="#top10">Top 10</a>
-            <a href="#matrice">Matrice QB</a>
             <a href="#quarterbacks">Quarterbacks</a>
-            <a href="#modele">Le modèle</a>
           </nav>
         </div>
       </div>
@@ -193,11 +190,8 @@ export default function App() {
               </span>
             </div>
             <div className="stats">
-              <Stat value={`#${player.rank_in_pos}`} label={`rang ${player.pos}`} big />
-              <Stat value={`${player.score10}/10`} label="note" big />
-              <Stat value={fmt(player.ghost_yards_per_game)} label="yards laissés / match" />
-              <Stat value={player.games} label="matchs" />
-              <Stat value={player.routes} label="tracés" />
+              <Stat value={fmt(player.ghost_yards_per_game)} label="yards laissés sur la table / match" big />
+              <Stat value={`#${player.rank_in_pos}`} label={`des ${player.pos}`} />
             </div>
           </div>
         ) : (
@@ -225,6 +219,19 @@ export default function App() {
         </div>
       </section>
 
+      <section className="panel reveal" style={{ '--d': 4 }} id="quarterbacks">
+          <SectionHead
+            title="Les quarterbacks"
+            sub="Part de bons choix comparée à la moyenne de la ligue, en points. Le pourcentage brut est indiqué en petit."
+          />
+          <QbTable qbs={data.qbs ?? []} />
+      </section>
+
+      <details className="panel more reveal" style={{ '--d': 5 }}>
+        <summary>
+          <span className="section-title">Pour aller plus loin</span>
+          <span className="muted">La matrice des choix du QB, le modèle et ses limites</span>
+        </summary>
       <div className="split">
         <section className="panel reveal" style={{ '--d': 3 }} id="matrice">
           <SectionHead
@@ -234,13 +241,6 @@ export default function App() {
           <Matrix matrix={data.matrix} threshold={data.meta?.decision_threshold} active={focus?.cell} onPick={showCell} />
         </section>
 
-        <section className="panel reveal" style={{ '--d': 4 }} id="quarterbacks">
-          <SectionHead
-            title="Les quarterbacks"
-            sub="Part de bons choix comparée à la moyenne de la ligue, en points. Le pourcentage brut est indiqué en petit."
-          />
-          <QbTable qbs={data.qbs ?? []} />
-        </section>
       </div>
 
       <div className="split">
@@ -255,6 +255,8 @@ export default function App() {
           </ul>
         </section>
       </div>
+
+      </details>
 
       <footer className="footer">
         Ghost Yards est un projet d'analyse réalisé pendant un hackathon, pas une statistique officielle de la NFL.
@@ -350,54 +352,48 @@ function Stat({ value, label, big }) {
   )
 }
 
+const lastName = (n) => (n ? n.split(' ').slice(-1)[0] : '')
+
 function PlayView({ play, namesById, selectedId }) {
   if (!play) return <div className="unavailable">Action indisponible</div>
-  const hasVectors = play.frame.some((p) => p.s != null && p.dir != null)
-  const hasGhost = play.ghost_id != null
+  const hasGhost = play.ghost_id != null && play.ghost_yards > 0
   const targetName = namesById.get(play.target_id)
   const ghostName = hasGhost ? namesById.get(play.ghost_id) : null
   return (
     <div className="play">
-      <div className="legend">
-        <span><i className="sw target" /> Cible choisie{targetName ? ` (${targetName})` : ''}</span>
+      <div className="verdict">
         {hasGhost ? (
-          <span>
-            <GhostLogo size={16} /> Plus libre et plus rentable, ignoré{ghostName ? ` (${ghostName})` : ''}
-          </span>
+          <>
+            <span className="verdict-value">+{fmt(play.ghost_yards)}</span>
+            <p className="verdict-text">
+              <strong>yards laissés sur la table.</strong> Le QB a lancé vers <span className="t-target">{targetName}</span>{' '}
+              ({fmt(play.target_xyards)} yards attendus) alors que <span className="t-ghost">{ghostName}</span>, plus libre,
+              en offrait {fmt(play.ghost_xyards)}.
+            </p>
+          </>
         ) : (
-          <span className="no-ghost">Pas d'option plus ouverte</span>
+          <p className="verdict-text">
+            <strong>Pas d'option plus ouverte.</strong> Le QB a lancé vers <span className="t-target">{targetName}</span>
+            {' '}: aucun receveur plus libre n'offrait davantage.
+          </p>
+        )}
+      </div>
+      <div className="legend">
+        <span><i className="sw target" /> Cible choisie{targetName ? ` : ${lastName(targetName)}` : ''}</span>
+        {hasGhost && (
+          <span>
+            <GhostLogo size={16} /> Ignoré, plus libre{ghostName ? ` : ${lastName(ghostName)}` : ''}
+          </span>
         )}
         <span><i className="sw receiver" /> Autres receveurs</span>
         <span><i className="sw defense" /> Défense</span>
-        <span><i className="sw los" /> Ligne de scrimmage</span>
-        {hasVectors && (
-          <span><i className="sw vec" /> Déplacement sur 0,5 s</span>
-        )}
       </div>
       <div className="field-wrap" key={playKey(play)}>
         <Field play={play} selectedId={selectedId} />
-        {hasGhost && play.ghost_yards > 0 ? (
-          <div className="field-callout">
-            <span className="callout-value">+{fmt(play.ghost_yards)}</span>
-            <span className="callout-label">yards attendus laissés sur la table</span>
-          </div>
-        ) : (
-          <div className="field-callout neutral">
-            <span className="callout-label">Pas d'option plus ouverte</span>
-          </div>
-        )}
       </div>
-      <p className="description">{play.description}</p>
-      <div className="badges">
-        <span className="badge neutral">Couverture : {play.coverage}</span>
-        <span className={`badge ${DECISION_CLASS[play.decision] ?? 'neutral'}`}>
-          {play.decision}
-          {hasGhost && play.gap > 0 && ` · +${fmt(play.gap)} yds attendus chez un receveur plus libre`}
-        </span>
-        <span className={`badge ${play.execution?.startsWith('Au-dessus') ? 'good' : 'bad'}`}>
-          {play.execution} · {fmt(play.actual_yards)} yds réels contre {fmt(play.target_xyards)} attendus
-        </span>
-      </div>
+      <p className="description">
+        <span className="muted">Action :</span> {play.description}
+      </p>
     </div>
   )
 }

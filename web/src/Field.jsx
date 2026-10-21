@@ -140,9 +140,9 @@ export default function Field({ play, selectedId }) {
                 <title>{p.name}</title>
               </circle>
             )}
-            {p.role === 'Pass Route' && p.xyards != null && (
+            {p.role === 'Pass Route' && p.xyards != null && (isKey || isSelected) && (
               <text className={`xyds ${isKey ? `xyds-${kind}` : ''}`} x={cx + 2.4} y={cy + 0.6}>
-                {p.xyards.toFixed(1)} xYds
+                {p.xyards.toFixed(1)} yds attendus
               </text>
             )}
             {(isKey || isSelected) && (
