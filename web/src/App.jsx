@@ -150,7 +150,7 @@ export default function App() {
     <>
       <div className="topbar">
         <div className="topbar-inner">
-          <a className="brand" href="#top" aria-label="Ghost Yards, haut de page">
+          <a className="brand" href="#" aria-label="Ghost Yards, haut de page">
             <GhostLogo size={30} />
             <span>Ghost Yards</span>
           </a>
@@ -163,22 +163,7 @@ export default function App() {
         </div>
       </div>
 
-      <Ticker qbs={data.qbs ?? []} />
 
-      <header className="hero" id="top">
-        <div className="hero-inner reveal" style={{ '--d': 0 }}>
-          {data.meta?.mock && <div className="mock-banner">Données factices · affichage de démonstration</div>}
-          <p className="kicker">Big Data Bowl · Tracking 2021, semaines 1 à 8 · Analyse</p>
-          <h1>Ghost Yards</h1>
-          <p className="tagline">Les yards que le receveur offrait, mais que le quarterback n'a jamais vus.</p>
-          <p className="method">
-            Un modèle estime les yards attendus de chaque receveur à l'instant du lancer. Quand un receveur plus libre
-            et plus rentable a été ignoré, l'écart avec la cible choisie devient des ghost yards : des yards attendus
-            laissés sur la table.
-          </p>
-          <Headline headline={data.meta?.headline} players={data.players ?? []} onSelect={(p) => selectPlayer(p, true)} />
-        </div>
-      </header>
 
     <div className="page">
       <div className="stage-grid">
@@ -312,77 +297,6 @@ export default function App() {
   )
 }
 
-const byLeague = (a, b) => (b.good_vs_league ?? -Infinity) - (a.good_vs_league ?? -Infinity)
-
-function Ticker({ qbs }) {
-  const top = [...qbs].sort(byLeague).slice(0, 5)
-  if (!top.length) return null
-  return (
-    <div className="ticker" aria-label="Quarterbacks au-dessus de la moyenne">
-      <div className="ticker-inner">
-        <span className="ticker-label">QB</span>
-        {top.map((q, i) => (
-          <a key={q.nflId} className="ticker-item" href="#quarterbacks">
-            <span className="ticker-pos">#{i + 1}</span>
-            <span className="ticker-name">{q.name}</span>
-            <span className="ticker-team">
-              <TeamLogo team={q.team} size={14} /> {q.team}
-            </span>
-            <span className="ticker-value">{fmtSigned(q.good_vs_league)} pts</span>
-            <span className="ticker-unit">vs moyenne</span>
-          </a>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// Accroche : les trois leaders fournis par meta.headline (pas de total cumulé).
-function Headline({ headline, players, onSelect }) {
-  const leaders = headline?.leaders
-  if (!leaders) return null
-  const find = (k, l) => players.find((p) => p.pos === k && p.name === l.name && p.team === l.team)
-  return (
-    <div className="headline">
-      <p className="headline-title">Les receveurs que les QB ont le plus laissés de côté</p>
-      <div className="leaders">
-        {POSITIONS.filter((k) => leaders[k]).map((k) => {
-          const l = leaders[k]
-          const p = find(k, l)
-          return (
-            <button key={k} className="leader" onClick={() => p && onSelect(p)} disabled={!p}>
-              <span className="leader-pos">N°1 {k}</span>
-              <span className="leader-name">{l.name}</span>
-              <span className="leader-team">
-                <TeamLogo team={l.team} /> {l.team}
-              </span>
-              <span className="leader-value">
-                {fmt(l.ghost_yards_per_game)} <small>yards attendus laissés sur la table / match</small>
-              </span>
-              {p && <span className="leader-cta">Voir son action fantôme →</span>}
-            </button>
-          )
-        })}
-      </div>
-      {(headline.pct_good_choice != null || headline.pct_bad_choice != null) && (
-        <p className="headline-facts">
-          {headline.pct_good_choice != null && (
-            <span>
-              <strong className="good-text">{fmt(headline.pct_good_choice, 0)} %</strong> des passes vont vers la bonne
-              option
-            </span>
-          )}
-          {headline.pct_bad_choice != null && (
-            <span>
-              <strong className="bad-text">{fmt(headline.pct_bad_choice, 0)} %</strong> ignorent un receveur plus libre et
-              plus rentable
-            </span>
-          )}
-        </p>
-      )}
-    </div>
-  )
-}
 
 function SectionHead({ title, sub }) {
   return (
