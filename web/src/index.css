@@ -545,3 +545,9 @@ tbody tr.selected td:first-child { box-shadow: inset 4px 0 0 var(--ghost); color
 .plays-list tbody tr.selected td:first-child { box-shadow: inset 4px 0 0 var(--ghost); }
 .plays-list tbody tr.selected td.name { color: var(--text); font-weight: 600; }
 .field .ghost-halo { opacity: 0.35; }
+
+.team-logo { display: inline-block; vertical-align: middle; object-fit: contain; }
+.game-teams { display: inline-flex; align-items: center; gap: 4px; }
+.play-footer { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.play-footer > div:first-child { flex: 1 1 420px; min-width: 0; }
+.play-footer .play-nav { margin-top: 12px; flex: 0 0 auto; }

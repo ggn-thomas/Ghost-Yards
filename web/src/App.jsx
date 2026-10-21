@@ -21,6 +21,23 @@ const QB_SORTS = {
   passes: 'Passes',
 }
 
+const LOGO_URL = (team) => `https://static.www.nfl.com/f_auto,h_24,dpr_2.0,q_auto,w_24/league/api/clubs/logos/${team}`
+
+function TeamLogo({ team, size = 20 }) {
+  if (!team) return null
+  return (
+    <img
+      className="team-logo"
+      src={LOGO_URL(team)}
+      width={size}
+      height={size}
+      alt=""
+      loading="lazy"
+      onError={(e) => (e.currentTarget.style.display = 'none')}
+    />
+  )
+}
+
 const playKey = (ref) => (ref ? `${ref.gameId}-${ref.playId}` : null)
 const fmt = (v, d = 1) => (v == null ? '–' : Number(v).toFixed(d))
 const fmtSigned = (v, d = 1) => (v == null ? '–' : `${v > 0 ? '+' : ''}${Number(v).toFixed(d)}`)
@@ -86,10 +103,10 @@ export default function App() {
     setCustom(null)
   }
 
-  const showCustom = (c) => {
+  const showCustom = (c, scroll = true) => {
     setFocus(null)
     setCustom(c)
-    scrollToStage()
+    if (scroll) scrollToStage()
   }
 
   const scrollToStage = () => stageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -188,7 +205,7 @@ export default function App() {
               <span className="lower-third-tag">Ghost play · #{player.rank_in_pos} {player.pos}</span>
               <h2>{player.name}</h2>
               <span className="meta">
-                {player.team} · {player.pos}
+                <TeamLogo team={player.team} /> {player.team} · {player.pos}
               </span>
             </div>
             <div className="stats">
@@ -200,7 +217,7 @@ export default function App() {
           <p className="muted">Aucun joueur pour ce poste.</p>
         )}
 
-        <PlayView play={play} namesById={namesById} selectedId={focus || custom ? null : player?.nflId} />
+        <PlayView play={play} namesById={namesById} selectedId={focus || custom ? null : player?.nflId} nav={custom?.nav} />
       </section>
 
       <div className="side">
@@ -286,7 +303,9 @@ function Ticker({ qbs }) {
           <a key={q.nflId} className="ticker-item" href="#quarterbacks">
             <span className="ticker-pos">#{i + 1}</span>
             <span className="ticker-name">{q.name}</span>
-            <span className="ticker-team">{q.team}</span>
+            <span className="ticker-team">
+              <TeamLogo team={q.team} size={14} /> {q.team}
+            </span>
             <span className="ticker-value">{fmtSigned(q.good_vs_league)} pts</span>
             <span className="ticker-unit">vs moyenne</span>
           </a>
@@ -312,7 +331,9 @@ function Headline({ headline, players, onSelect }) {
             <button key={k} className="leader" onClick={() => p && onSelect(p)} disabled={!p}>
               <span className="leader-pos">N°1 {k}</span>
               <span className="leader-name">{l.name}</span>
-              <span className="leader-team">{l.team}</span>
+              <span className="leader-team">
+                <TeamLogo team={l.team} /> {l.team}
+              </span>
               <span className="leader-value">
                 {fmt(l.ghost_yards_per_game)} <small>yards attendus laissés sur la table / match</small>
               </span>
@@ -361,7 +382,7 @@ function Stat({ value, label, big }) {
 
 const lastName = (n) => (n ? n.split(' ').slice(-1)[0] : '')
 
-function PlayView({ play, namesById, selectedId }) {
+function PlayView({ play, namesById, selectedId, nav }) {
   if (!play) return <div className="unavailable">Action indisponible</div>
   const hasGhost = play.ghost_id != null && play.ghost_yards > 0
   const nameOf = (id) => namesById.get(id) ?? play.frame.find((f) => f.nflId === id)?.name
@@ -399,6 +420,8 @@ function PlayView({ play, namesById, selectedId }) {
       <div className="field-wrap" key={playKey(play)}>
         <Field play={play} selectedId={selectedId} />
       </div>
+      <div className="play-footer">
+        <div>
       <p className="description">
         <span className="muted">Action :</span> {play.description}
       </p>
@@ -411,6 +434,19 @@ function PlayView({ play, namesById, selectedId }) {
           <span className={`badge ${play.execution.startsWith('Au-dessus') ? 'good' : 'bad'}`}>
             {play.execution} · {fmt(play.actual_yards)} yds réels contre {fmt(play.target_xyards)} attendus
           </span>
+        )}
+      </div>
+        </div>
+        {nav && (
+          <div className="play-nav">
+            <button className="ghost-btn" disabled={!nav.prev} onClick={() => nav.prev?.()}>
+              ← Action précédente
+            </button>
+            <span className="muted">{nav.label}</span>
+            <button className="ghost-btn" disabled={!nav.next} onClick={() => nav.next?.()}>
+              Action suivante →
+            </button>
+          </div>
         )}
       </div>
     </div>
@@ -442,7 +478,9 @@ function TopTable({ pos, rows, selected, onSelect }) {
             >
               <td className="rank sorted">{p.rank_in_pos}</td>
               <td className="name">{p.name}</td>
-              <td className="team">{p.team}</td>
+              <td className="team">
+                <TeamLogo team={p.team} /> {p.team}
+              </td>
               <td className="num">
                 <Score value={p.score10} />
               </td>
@@ -537,7 +575,9 @@ function QbTable({ qbs }) {
               <tr key={q.nflId} className="static">
                 <td className="rank">{i + 1}</td>
                 <td className="name">{q.name}</td>
-                <td className="team">{q.team}</td>
+                <td className="team">
+                  <TeamLogo team={q.team} /> {q.team}
+                </td>
                 <td className={sort === 'good_vs_league' ? 'sorted' : ''}>
                   <span className={`vs-league ${q.good_vs_league > 0 ? 'up' : q.good_vs_league < 0 ? 'down' : ''}`}>
                     {fmtSigned(q.good_vs_league)} pts
@@ -650,7 +690,7 @@ function Explorer({ data, onShow, active }) {
 
   if (!data.all_plays || !data.games) return null
 
-  const open = async (p) => {
+  const open = async (p, scroll = true) => {
     setLoading(p.playId)
     setError(null)
     try {
@@ -659,11 +699,20 @@ function Explorer({ data, onShow, active }) {
       if (!raw) throw new Error('positions absentes')
       const frame = raw.map((x) => ({ ...x, name: x.nflId != null ? f.names?.[String(x.nflId)] : 'football' }))
       const opp = p.offense === game.homeTeamAbbr ? `contre ${game.visitorTeamAbbr}` : `à ${game.homeTeamAbbr}`
-      onShow({
+      const idx = plays.findIndex((x) => x.playId === p.playId)
+      onShow(
+        {
         play: { ...p, frame },
+        nav: {
+          label: `${idx + 1} / ${plays.length}`,
+          prev: idx > 0 ? () => open(plays[idx - 1], false) : null,
+          next: idx >= 0 && idx < plays.length - 1 ? () => open(plays[idx + 1], false) : null,
+        },
         title: `Semaine ${game.week} · ${p.offense} ${opp}`,
         sub: `${p.quarter === 1 ? '1er' : `${p.quarter}e`} quart-temps · ${DOWN_LABEL[p.down] ?? p.down} & ${p.yardsToGo}`,
-      })
+        },
+        scroll,
+      )
     } catch (e) {
       setError(`Action indisponible (${e.message})`)
     } finally {
@@ -711,7 +760,10 @@ function Explorer({ data, onShow, active }) {
                 onClick={() => setGameId(g.gameId)}
               >
                 <span className="game-week">S{g.week}</span>
-                <span className="game-teams">{home ? `${team} – ${g.visitorTeamAbbr}` : `${team} @ ${g.homeTeamAbbr}`}</span>
+                <span className="game-teams">
+                  <TeamLogo team={team} /> {home ? '–' : '@'} <TeamLogo team={home ? g.visitorTeamAbbr : g.homeTeamAbbr} />{' '}
+                  {home ? g.visitorTeamAbbr : g.homeTeamAbbr}
+                </span>
                 <span className="game-date">{g.gameDate}</span>
                 {t && <span className="game-gy">{fmt(t.ghost_yards)} yds laissés</span>}
               </button>
@@ -722,23 +774,6 @@ function Explorer({ data, onShow, active }) {
 
       {error && <p className="unavailable small">{error}</p>}
 
-      {game && (
-        <div className="play-nav">
-          <button className="ghost-btn" disabled={activeIdx <= 0} onClick={() => open(plays[activeIdx - 1])}>
-            ← Action précédente
-          </button>
-          <span className="muted">
-            {activeIdx >= 0 ? `${activeIdx + 1} / ${plays.length}` : `${plays.length} actions`}
-          </span>
-          <button
-            className="ghost-btn"
-            disabled={!plays.length || activeIdx >= plays.length - 1}
-            onClick={() => open(plays[activeIdx + 1])}
-          >
-            Action suivante →
-          </button>
-        </div>
-      )}
 
       {game && (
         <div className="table-scroll plays-list">
