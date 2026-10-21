@@ -21,3 +21,23 @@ Sortie attendue de `run_all` : `target match 95.5%`, `MAE 6.809 vs baseline 7.39
 La calibration du modèle est tracée dans `out/calibration.png`. Chaque étape se relance seule (`python -m src.features`, `src.model`, `src.ghost_yards`, `src.export`).
 
 Interface en local : `cd web && npm install && npm run dev`.
+
+## Où sont les résultats
+**Dans le dépôt** (`web/public/`, lus par l'interface) :
+
+| Fichier | Contenu |
+|---|---|
+| `web/public/data.json` | Le résultat complet. `players` : receveurs classés (ghost yards par match, rang et note sur 10 dans le poste, ghost play). `qbs` : QB classés (% de bons choix, écart à la moyenne de la ligue). `matrix` : décision × exécution. `all_plays` : les 7 227 actions (cible, fantôme, xYards, ghost yards, verdict). Plus `all_players`, `all_qbs`, `teams`, `positions`, `games` et `meta` (erreur du modèle, accroche). |
+| `web/public/frames/<gameId>.json` | Positions des 22 joueurs et du ballon au lancer, avec les xYards de chaque receveur, pour chaque action du match. |
+
+**En local** (`out/`, non versionné, recréé par `run_all`) :
+
+| Fichier | Contenu |
+|---|---|
+| `out/players.parquet`, `out/qbs.parquet` | Classements des receveurs et des QB |
+| `out/plays.parquet` | Une ligne par action : cible, fantôme, `gap`, ghost yards, décision, exécution |
+| `out/xyards.parquet` | xYards de chaque receveur à chaque action (prédictions out-of-fold) |
+| `out/calibration.png` | Calibration du modèle : yards prédits contre réels, par décile |
+| `out/check_plays.png` | Contrôle visuel de la normalisation (l'attaque va vers la droite) |
+| `out/summary.json`, `out/model_meta.json` | Matrice, chiffres d'accroche, erreur du modèle contre la baseline |
+| `out/throw_frame.parquet`, `out/snap_frame.parquet`, `out/receivers.parquet` | Étapes intermédiaires : tracking au lancer et au snap, features par receveur |
