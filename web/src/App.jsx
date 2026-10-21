@@ -188,7 +188,7 @@ export default function App() {
       <section className="panel reveal" style={{ '--d': 2 }}>
         <SectionHead
           title="Top 10 par poste"
-          sub="Ghost yards par match : ce que chaque receveur offrait, en moyenne, sans être ciblé. Cliquez sur un joueur pour voir son action fantôme."
+          sub="Ghost yards par match : les yards attendus laissés sur la table quand le receveur était la meilleure option ignorée. Cliquez sur un joueur pour voir son action fantôme."
         />
         <div className="tops">
           {POSITIONS.map((k) => (
@@ -215,7 +215,7 @@ export default function App() {
         <section className="panel reveal" style={{ '--d': 4 }}>
           <SectionHead
             title="Les quarterbacks"
-            sub="Part des passes vers la meilleure option, et ghost yards laissés sur le terrain par match."
+            sub="Part des passes vers la meilleure option, et yards attendus laissés sur la table par match."
           />
           <QbTable qbs={data.qbs ?? []} />
         </section>
