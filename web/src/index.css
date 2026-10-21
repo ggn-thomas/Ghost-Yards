@@ -130,6 +130,7 @@ select {
 .sw.ghost { background: rgba(57, 255, 156, 0.35); border: 1.5px dashed var(--ghost); box-shadow: 0 0 6px var(--ghost); }
 .sw.receiver { background: var(--receiver); }
 .sw.defense { background: var(--defense); }
+.sw.vec { width: 16px; height: 0; border-radius: 0; border-top: 2px solid #c9ced8; }
 .sw.los { width: 16px; height: 0; border-radius: 0; border-top: 2px dashed var(--los); }
 .field-wrap { border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
 .description { margin: 12px 0 8px; font-size: 15px; }
@@ -152,14 +153,39 @@ select {
 .field .arrow-head { fill: var(--target); }
 .field .dot { stroke: rgba(0, 0, 0, 0.45); stroke-width: 0.15; }
 .field .dot.target { fill: var(--target); stroke: #fff; stroke-width: 0.25; }
-.field .dot.ghost { fill: var(--ghost); fill-opacity: 0.35; stroke: var(--ghost); stroke-width: 0.25; stroke-dasharray: 0.5 0.35; }
-.field .ghost-halo { fill: var(--ghost); opacity: 0.45; }
+.field .ghost-halo { fill: var(--ghost); opacity: 0.4; }
+.field .stripe { fill: var(--turf-2); }
+.field .endzone-label { fill: rgba(255, 255, 255, 0.18); font: 700 5px var(--font-title); letter-spacing: 0.4px; text-anchor: middle; dominant-baseline: central; }
+.field .trail { fill: none; stroke-width: 0.35; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 0.6 0.5; opacity: 0.7; }
+.field .trail-ghost { stroke: var(--ghost); stroke-width: 0.5; }
+.field .trail-target { stroke: var(--target); }
+.field .trail-receiver { stroke: var(--receiver); }
+.field .trail-defense, .field .trail-offense { stroke: var(--defense); opacity: 0.35; }
+.field .vector { stroke-width: 0.25; opacity: 0.9; }
+.field .vector-ghost { stroke: var(--ghost); stroke-width: 0.35; }
+.field .vector-target { stroke: var(--target); }
+.field .vector-receiver { stroke: var(--receiver); }
+.field .vector-defense { stroke: #c9ced8; }
+.field .vector-offense { stroke: var(--offense); opacity: 0.6; }
+
+/* Fantôme vectoriel */
+.ghost-body { fill: var(--ghost); fill-opacity: 0.4; stroke: var(--ghost); stroke-width: 0.14; stroke-dasharray: 0.35 0.22; stroke-linejoin: round; }
+.ghost-eye { fill: #06210f; }
+.ghost-logo { display: inline-block; vertical-align: middle; overflow: visible; filter: drop-shadow(0 0 6px rgba(57, 255, 156, 0.6)); }
+.hero .ghost-logo { display: block; margin: 0 auto 6px; animation: float 3s ease-in-out infinite; }
+.field .ghost-float { animation: float-svg 2.4s ease-in-out infinite; }
+@keyframes float { 50% { transform: translateY(-6px); } }
+@keyframes float-svg { 50% { transform: translateY(-0.35px); } }
+@media (prefers-reduced-motion: reduce) {
+  .hero .ghost-logo, .field .ghost-float { animation: none; }
+}
 .field .dot.receiver { fill: var(--receiver); }
 .field .dot.defense { fill: var(--defense); }
 .field .dot.offense { fill: var(--offense); }
 .field .dot.ball { fill: var(--ball); stroke: #fff; stroke-width: 0.12; }
 .field .xyds { fill: #fff; font: 600 1.6px var(--font-body); paint-order: stroke; stroke: rgba(0, 0, 0, 0.55); stroke-width: 0.3; }
 .field .xyds-ghost { fill: var(--ghost); font-size: 1.9px; }
+.field .xyds-ghost, .field .xyds-target { font-weight: 700; }
 .field .xyds-target { fill: #ffd0d5; font-size: 1.9px; }
 .field .pname { fill: #fff; font: 700 1.5px var(--font-body); paint-order: stroke; stroke: rgba(0, 0, 0, 0.55); stroke-width: 0.3; }
 

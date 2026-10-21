@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import Field from './Field.jsx'
+import { GhostLogo } from './Ghost.jsx'
 
 const POSITIONS = ['WR', 'TE', 'RB']
 const POS_LABEL = { WR: 'Wide receivers', TE: 'Tight ends', RB: 'Running backs' }
@@ -55,6 +56,7 @@ export default function App() {
       {data.meta?.mock && <div className="mock-banner">Données factices : affichage de démonstration</div>}
 
       <header className="hero">
+        <GhostLogo size={64} />
         <p className="kicker">NFL Big Data Bowl · Saison 2021, semaines 1 à 8</p>
         <h1>Ghost Yards</h1>
         <p className="tagline">Les yards que le receveur offrait, mais que le quarterback n'a jamais vus.</p>
@@ -145,14 +147,20 @@ function Stat({ value, label, big }) {
 
 function PlayView({ play }) {
   if (!play) return <div className="unavailable">Action indisponible</div>
+  const hasVectors = play.frame.some((p) => p.s != null && p.dir != null)
   return (
     <div className="play">
       <div className="legend">
         <span><i className="sw target" /> Cible réelle</span>
-        <span><i className="sw ghost" /> Receveur ignoré</span>
+        <span>
+          <GhostLogo size={16} /> Receveur ignoré
+        </span>
         <span><i className="sw receiver" /> Autres receveurs</span>
         <span><i className="sw defense" /> Défense</span>
         <span><i className="sw los" /> Ligne de scrimmage</span>
+        {hasVectors && (
+          <span><i className="sw vec" /> Déplacement sur 0,5 s</span>
+        )}
       </div>
       <div className="field-wrap">
         <Field play={play} />
