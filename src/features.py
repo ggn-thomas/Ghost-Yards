@@ -9,6 +9,8 @@ TARGET_RE = re.compile(
 SUFFIXES = re.compile(r"\s+(jr\.?|sr\.?|ii|iii|iv|v)$", re.IGNORECASE)
 KEEP_RESULTS = ["C", "I", "IN"]
 ENDZONE_X = 110
+CLOCK_QUARTERS = [2, 4, 5]
+CLOCK_SECONDS = 120
 
 
 def name_key(s):
@@ -27,9 +29,15 @@ def split_target(target_name):
     return name_key(first), name_key(last)
 
 
+def clock_situation(plays):
+    # last 2 minutes of a half or overtime: the QB plays the clock, not the yards
+    sec = plays.gameClock.str.split(":").map(lambda t: int(t[0]) * 60 + int(t[1]))
+    return plays.quarter.isin(CLOCK_QUARTERS) & (sec <= CLOCK_SECONDS)
+
+
 def load_plays():
     plays = pd.read_csv(f"{RAW}/plays.csv")
-    plays = plays[plays.passResult.isin(KEEP_RESULTS)].copy()
+    plays = plays[plays.passResult.isin(KEEP_RESULTS) & ~clock_situation(plays)].copy()
     plays["target_name"] = plays.playDescription.str.extract(TARGET_RE, expand=False)
     return plays
 
