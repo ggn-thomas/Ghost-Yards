@@ -46,7 +46,8 @@ def rank_players(df, plays, players):
     r = r.join(players.set_index("nflId")[["displayName", "officialPosition"]])
     r["pos"] = r.officialPosition.map(POSITIONS)
     r = r[(r.routes >= MIN_ROUTES) & r.pos.notna()].copy()
-    r["ghost_yards_per_game"] = r.ghost_total / r.games
+    # rounded as displayed, so equal displayed values share a rank
+    r["ghost_yards_per_game"] = (r.ghost_total / r.games).round(1)
     r["rank_in_pos"] = r.groupby("pos").ghost_yards_per_game.rank(ascending=False, method="min").astype(int)
     pct = r.groupby("pos").ghost_yards_per_game.rank(pct=True)
     r["score10"] = np.ceil(pct * 10).astype(int)
