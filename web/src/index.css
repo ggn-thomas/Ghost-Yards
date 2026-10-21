@@ -527,3 +527,14 @@ tbody tr.selected td:first-child { box-shadow: inset 4px 0 0 var(--ghost); color
 .stage-grid .game { padding: 6px 10px; border-top-width: 3px; }
 .stage-grid .game-teams { font-size: 14px; }
 .stage-grid .game-date { display: none; }
+
+/* Plein écran : terrain à gauche, colonne explorateur + top 10 à droite */
+.page { max-width: none; padding: 4px 20px 56px; }
+.topbar-inner, .ticker-inner, .hero-inner { max-width: none; padding-left: 20px; padding-right: 20px; }
+.stage-grid { grid-template-columns: minmax(0, 1fr) clamp(380px, 32vw, 560px); }
+.side { display: flex; flex-direction: column; min-width: 0; }
+.stage-grid .side #equipes { position: static; max-height: none; overflow: visible; }
+.stage-grid .plays-list { max-height: 420px; overflow-y: auto; }
+.side .tops { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.side #top10 table { font-size: 13px; }
+.side #top10 th, .side #top10 td { padding: 7px 6px; }

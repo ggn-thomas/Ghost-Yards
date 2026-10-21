@@ -203,26 +203,28 @@ export default function App() {
         <PlayView play={play} namesById={namesById} selectedId={focus || custom ? null : player?.nflId} />
       </section>
 
-      <Explorer data={data} onShow={showCustom} />
+      <div className="side">
+        <Explorer data={data} onShow={showCustom} />
+        <section className="panel reveal" style={{ '--d': 2 }} id="top10">
+          <SectionHead
+            title="Top 10 par poste"
+            sub="Classement par poste et note sur 10 : quels receveurs étaient le plus souvent l'option plus libre et plus rentable que le QB n'a pas choisie. Cliquez sur un joueur pour voir son action fantôme."
+          />
+          <div className="tops">
+            {POSITIONS.map((k) => (
+              <TopTable
+                key={k}
+                pos={k}
+                rows={byPos[k].slice(0, 10)}
+                selected={focus ? null : player}
+                onSelect={(p) => selectPlayer(p, true)}
+              />
+            ))}
+          </div>
+        </section>
+      </div>
       </div>
 
-      <section className="panel reveal" style={{ '--d': 2 }} id="top10">
-        <SectionHead
-          title="Top 10 par poste"
-          sub="Classement par poste et note sur 10 : quels receveurs étaient le plus souvent l'option plus libre et plus rentable que le QB n'a pas choisie. Cliquez sur un joueur pour voir son action fantôme."
-        />
-        <div className="tops">
-          {POSITIONS.map((k) => (
-            <TopTable
-              key={k}
-              pos={k}
-              rows={byPos[k].slice(0, 10)}
-              selected={focus ? null : player}
-              onSelect={(p) => selectPlayer(p, true)}
-            />
-          ))}
-        </div>
-      </section>
 
       <section className="panel reveal" style={{ '--d': 4 }} id="quarterbacks">
           <SectionHead
