@@ -21,6 +21,18 @@ const QB_SORTS = {
   passes: 'Passes',
 }
 
+// Noms complets des équipes (saison 2021), pour l'affichage uniquement.
+const TEAM_NAMES = {
+  ARI: 'Arizona Cardinals', ATL: 'Atlanta Falcons', BAL: 'Baltimore Ravens', BUF: 'Buffalo Bills',
+  CAR: 'Carolina Panthers', CHI: 'Chicago Bears', CIN: 'Cincinnati Bengals', CLE: 'Cleveland Browns',
+  DAL: 'Dallas Cowboys', DEN: 'Denver Broncos', DET: 'Detroit Lions', GB: 'Green Bay Packers',
+  HOU: 'Houston Texans', IND: 'Indianapolis Colts', JAX: 'Jacksonville Jaguars', KC: 'Kansas City Chiefs',
+  LA: 'Los Angeles Rams', LAC: 'Los Angeles Chargers', LV: 'Las Vegas Raiders', MIA: 'Miami Dolphins',
+  MIN: 'Minnesota Vikings', NE: 'New England Patriots', NO: 'New Orleans Saints', NYG: 'New York Giants',
+  NYJ: 'New York Jets', PHI: 'Philadelphia Eagles', PIT: 'Pittsburgh Steelers', SEA: 'Seattle Seahawks',
+  SF: 'San Francisco 49ers', TB: 'Tampa Bay Buccaneers', TEN: 'Tennessee Titans', WAS: 'Washington Football Team',
+}
+
 const LOGO_URL = (team) => `https://static.www.nfl.com/f_auto,h_24,dpr_2.0,q_auto,w_24/league/api/clubs/logos/${team}`
 
 function TeamLogo({ team, size = 20 }) {
@@ -36,6 +48,15 @@ function TeamLogo({ team, size = 20 }) {
       onError={(e) => (e.currentTarget.style.display = 'none')}
     />
   )
+}
+
+// Rang d'affichage : même rang quand la valeur affichée (arrondie) est identique, ex. 1, 2, 2, 4.
+function tieRanks(rows, shown) {
+  const ranks = []
+  rows.forEach((r, i) => {
+    ranks.push(i > 0 && shown(r) === shown(rows[i - 1]) ? ranks[i - 1] : i + 1)
+  })
+  return ranks
 }
 
 const playKey = (ref) => (ref ? `${ref.gameId}-${ref.playId}` : null)
@@ -71,9 +92,10 @@ export default function App() {
   const byPos = useMemo(() => {
     const m = { WR: [], TE: [], RB: [] }
     for (const p of data?.players ?? []) m[p.pos]?.push(p)
-    for (const k of POSITIONS) m[k].sort((a, b) => a.rank_in_pos - b.rank_in_pos)
+    for (const k of POSITIONS) m[k].sort((a, b) => a.rank_in_pos - b.rank_in_pos || b.ghost_yards_per_game - a.ghost_yards_per_game)
     return m
   }, [data])
+
 
   const namesById = useMemo(() => {
     const m = new Map()
@@ -385,6 +407,9 @@ const lastName = (n) => (n ? n.split(' ').slice(-1)[0] : '')
 function PlayView({ play, namesById, selectedId, nav }) {
   if (!play) return <div className="unavailable">Action indisponible</div>
   const hasGhost = play.ghost_id != null && play.ghost_yards > 0
+  const hasOthers = play.frame.some(
+    (f) => f.role === 'Pass Route' && f.nflId !== play.target_id && !(hasGhost && f.nflId === play.ghost_id),
+  )
   const nameOf = (id) => namesById.get(id) ?? play.frame.find((f) => f.nflId === id)?.name
   const targetName = nameOf(play.target_id)
   const ghostName = hasGhost ? nameOf(play.ghost_id) : null
@@ -414,7 +439,7 @@ function PlayView({ play, namesById, selectedId, nav }) {
             <GhostLogo size={16} /> Ignoré, plus libre{ghostName ? ` : ${lastName(ghostName)}` : ''}
           </span>
         )}
-        <span><i className="sw receiver" /> Autres receveurs</span>
+        {hasOthers && <span><i className="sw receiver" /> Autres receveurs</span>}
         <span><i className="sw defense" /> Défense</span>
       </div>
       <div className="field-wrap" key={playKey(play)}>
@@ -548,6 +573,8 @@ function QbTable({ qbs }) {
   const [sort, setSort] = useState('good_vs_league')
   const asc = sort === 'ghost_yards_ceded_per_game' // moins de yards laissés = mieux
   const rows = [...qbs].sort((a, b) => (asc ? a[sort] - b[sort] : b[sort] - a[sort]))
+  const shown = { good_vs_league: (q) => fmtSigned(q.good_vs_league), ghost_yards_ceded_per_game: (q) => fmt(q.ghost_yards_ceded_per_game), passes: (q) => q.passes }[sort]
+  const ranks = tieRanks(rows, shown)
   if (!qbs.length) return <p className="muted">Aucun quarterback.</p>
   return (
     <>
@@ -573,7 +600,7 @@ function QbTable({ qbs }) {
           <tbody>
             {rows.map((q, i) => (
               <tr key={q.nflId} className="static">
-                <td className="rank">{i + 1}</td>
+                <td className="rank">{ranks[i]}</td>
                 <td className="name">{q.name}</td>
                 <td className="team">
                   <TeamLogo team={q.team} /> {q.team}
@@ -738,7 +765,7 @@ function Explorer({ data, onShow, active }) {
           <option value="">Choisir une équipe…</option>
           {teams.map((t) => (
             <option key={t.team} value={t.team}>
-              {t.team} · {fmt(t.ghost_yards_per_game)} yds laissés / match
+              {t.team} · {TEAM_NAMES[t.team] ?? t.team} ({fmt(t.ghost_yards_per_game)} yds laissés / match)
             </option>
           ))}
         </select>

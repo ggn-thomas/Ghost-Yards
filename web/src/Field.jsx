@@ -124,6 +124,15 @@ export default function Field({ play, selectedId }) {
         const kind = kindOf(p, play)
         const isKey = kind === 'target' || kind === 'ghost'
         const isSelected = selectedId != null && p.nflId === selectedId
+        // Étiquettes : à gauche près de l'en-but droit, décalées après la mascotte, jamais coupées en haut ou en bas.
+        const gap = kind === 'ghost' ? 3.4 : 2.4
+        const toLeft = cx > W - 18
+        const lx = toLeft ? cx - gap : cx + gap
+        const anchor = toLeft ? 'end' : 'start'
+        let nameY = cy - 1.5
+        let ydsY = cy + 0.6
+        if (nameY < 1.6) [nameY, ydsY] = [1.6, 3.7]
+        if (ydsY > H - 0.6) [nameY, ydsY] = [H - 2.7, H - 0.6]
         return (
           <g key={p.nflId ?? `ball-${i}`}>
             {isSelected && <circle className="selected-ring" cx={cx} cy={cy} r={kind === 'ghost' ? 3 : 2} />}
@@ -145,12 +154,12 @@ export default function Field({ play, selectedId }) {
               </circle>
             )}
             {p.role === 'Pass Route' && p.xyards != null && (isKey || isSelected) && (
-              <text className={`xyds ${isKey ? `xyds-${kind}` : ''}`} x={cx + 2.4} y={cy + 0.6}>
+              <text className={`xyds ${isKey ? `xyds-${kind}` : ''}`} x={lx} y={ydsY} textAnchor={anchor}>
                 {p.xyards.toFixed(1)} yds attendus
               </text>
             )}
             {(isKey || isSelected) && (
-              <text className={`pname ${isSelected ? 'pname-selected' : ''}`} x={cx + 2.4} y={cy - 1.5}>
+              <text className={`pname ${isSelected ? 'pname-selected' : ''}`} x={lx} y={nameY} textAnchor={anchor}>
                 {shortName(p.name)}
               </text>
             )}
