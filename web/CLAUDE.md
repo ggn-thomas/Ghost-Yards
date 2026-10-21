@@ -24,8 +24,9 @@ Accroche : *« Les yards que le receveur offrait, mais que le quarterback n'a ja
 - **Aucun calcul de stat côté navigateur** : tout vient de `data.json`. Seuls le tri, le filtrage et l'affichage sont autorisés.
 - Pas de dépendance lourde. Le SVG est écrit à la main (pas de lib de charts nécessaire).
 - Vercel : importer le dépôt GitHub `ggn-thomas/Ghost-Yards` avec **Root Directory = `web`** (framework Vite détecté automatiquement).
-  Chaque push sur `main` redéploie. Vérifier que `npm run build` passe en local avant chaque push.
-- Commits petits et fréquents, uniquement sur des fichiers de `web/`. Faire `git pull --rebase` avant chaque push.
+  Chaque merge sur `main` redéploie (les PR ont une preview Vercel). Vérifier que `npm run build` passe en local.
+- **Jamais de push direct sur `main`.** Une branche `feat/<sujet>` par tâche, puis une PR vers `main`, titre et commits préfixés `feat: ...`.
+- Uniquement des fichiers de `web/`. Rebase sur `main` avant de merger.
 
 ## Contrat `data.json`
 Le mock actuel (`web/public/data.json`) respecte exactement ce format. `meta.mock = true` sur le mock : dans ce cas,
@@ -107,7 +108,7 @@ Règles :
 - **14h30** : app Vite créée, mock chargé, terrain SVG qui dessine un play.
 - **15h00** : P1 complet, premier déploiement Vercel qui marche (envoyer l'URL à l'équipe).
 - **15h00–15h20** : brancher le vrai `data.json` (simple remplacement du fichier), P2.
-- **15h20** : `npm run build` OK, push final, vérification de l'URL Vercel. **Plus de push front après 15h30.**
+- **15h20** : `npm run build` OK, dernière PR mergée, vérification de l'URL Vercel. **Plus de merge front après 15h30.**
 - Faire une capture d'écran de la page pour le README (à déposer dans `web/public/screenshot.png`).
 
 ## Ton et wording
