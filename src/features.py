@@ -43,7 +43,7 @@ def load_roles():
 def pick_target(group):
     # first-name prefix + last name, then last name alone; must be unique
     first, last = split_target(group.target_name.iloc[0])
-    same_first = group.first.str.startswith(first)
+    same_first = group["first"].str.startswith(first)
     for mask in (same_first & (group["last"] == last),
                  same_first & group["last"].str.startswith(last),
                  group["last"] == last):
@@ -110,6 +110,8 @@ def run():
     f = f.merge(plays[cols], on=["gameId", "playId"])
     f["is_target"] = f.nflId == f.target_id
     f = f[f.groupby(["gameId", "playId"]).is_target.transform("any")]
+    # fixed row order: DuckDB output order varies and would change the GroupKFold folds
+    f = f.sort_values(["gameId", "playId", "nflId"]).reset_index(drop=True)
     f.to_parquet("out/receivers.parquet")
     print(f"features: target match {rate:.1%}, {f.playId.groupby(f.gameId).nunique().sum()} plays, "
           f"{len(f)} receiver rows, {f.groupby(['gameId', 'playId']).size().mean():.2f} receivers/play")

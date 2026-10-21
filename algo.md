@@ -63,7 +63,7 @@ Le tracking enregistre 10 positions par seconde pour les 22 joueurs et le ballon
 
 ### 4. Ghost yards
 Sur chaque action :
-1. **Le fantôme** (`ghost_id`) est le receveur non ciblé **plus ouvert que la cible** (`sep1` supérieur) qui a le plus de xYards. S'il n'en existe aucun, il n'y a pas de fantôme.
+1. **Le fantôme** (`ghost_id`) est le receveur non ciblé **plus ouvert que la cible** (`sep1` supérieur) qui a le plus de xYards, à condition qu'il offre plus que la cible. Sinon, il n'y a pas de fantôme.
 2. `gap = xYards(fantôme) - xYards(cible)`
 3. `ghost_yards = max(0, gap)`, attribué **à ce seul receveur**.
 
@@ -75,7 +75,7 @@ Un seul receveur peut recevoir le ballon. Une action produit donc **au plus une*
 - le classement se fait par poste, et la note sur 10 est le décile dans le poste ;
 - son ghost play est l'action où il a offert le plus (hors actions annulées par une pénalité).
 
-*Exemple : Amari Cooper court 205 tracés en 7 matchs. Il est le fantôme sur 41 actions, dont 27 avec un écart positif, soit 176 yards attendus au total et 25,1 par match.*
+*Exemple : Amari Cooper court 205 tracés en 7 matchs. Il est le fantôme sur 28 actions, soit 178,8 yards attendus au total et 25,5 par match.*
 
 ### 5. Verdict du QB (complément)
 Deux questions **séparées** :
@@ -103,6 +103,7 @@ Résultat sur la ligue : 58,8 % de bons choix, 26,5 % de discutables, 14,7 % de 
 - **Seuil de décision.** À 3 yards, la moitié des passes devenaient des « mauvais choix », ce qui n'est pas crédible. Le seuil retenu est de 5 yards.
 
 ## Limites
+- Le pipeline est reproductible (ordre des lignes fixé, graines fixes), mais les écarts serrés du classement RB (Swift 5,3, Ekeler 5,0) peuvent s'inverser avec d'autres plis.
 - Ouvert au lancer ne veut pas dire ouvert à l'arrivée du ballon.
 - La pression sur le QB, le timing des routes et la progression de lecture ne sont pas modélisés.
 - Le biais de sélection est atténué, pas éliminé. Les valeurs doivent se lire comme des **yards attendus laissés sur la table**, pas comme des yards perdus.
