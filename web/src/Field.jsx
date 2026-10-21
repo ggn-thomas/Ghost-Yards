@@ -135,8 +135,12 @@ export default function Field({ play, selectedId }) {
                 </g>
                 <title>{p.name}</title>
               </g>
+            ) : kind === 'ball' ? (
+              <image className="ball-icon" href="/football.png" x={cx - 1.4} y={cy - 1.4} width="2.8" height="2.8">
+                <title>Ballon</title>
+              </image>
             ) : (
-              <circle className={`dot ${kind}`} cx={cx} cy={cy} r={kind === 'ball' ? 0.55 : 1.05}>
+              <circle className={`dot ${kind}`} cx={cx} cy={cy} r="1.05">
                 <title>{p.name}</title>
               </circle>
             )}
