@@ -57,8 +57,12 @@ git clone --depth 1 https://github.com/ThompsonJamesBliss/nfl-big-data-bowl-regi
 - Plafond : `xYards = min(pred, 110 - los_x)`, la place restante jusqu'à l'en-but.
 - Validation : MAE du modèle contre MAE de la baseline (moyenne), calibration par décile,
   contrôle « à profondeur égale, plus de séparation ⇒ plus de xYards ».
-- `ghost_yards` (receveur non ciblé) = `max(0, xYards - xYards_cible)`.
-- Joueurs : somme des ghost yards / matchs joués, minimum 100 tracés, classement par poste, `score10` = décile dans le poste.
+- Un seul receveur peut recevoir le ballon : **une action = au plus une valeur de ghost yards**.
+  `ghost_id` = receveur non ciblé avec le plus de xYards ; `ghost_yards` = `max(0, gap)`, attribué **uniquement** à `ghost_id`.
+  **Ne jamais additionner les receveurs d'une même action.** Les totaux (joueur, QB, équipe, accroche) sont des sommes de `ghost_yards` par action.
+- Joueurs : somme des ghost yards des actions où il est `ghost_id` / matchs joués, minimum 100 tracés,
+  classement par poste, `score10` = décile dans le poste.
+- Wording : « yards attendus laissés sur la table », jamais « yards perdus » (ce sont des espérances).
 - Verdict du QB : `gap = max xYards des non ciblés - xYards_cible`. Bon choix si ≤ 0, Discutable si < 3, Mauvais choix si ≥ 3.
   Exécution = yards réels - xYards_cible.
   **Ne jamais comparer des yards réels aux xYards d'une alternative.**
