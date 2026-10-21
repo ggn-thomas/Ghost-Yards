@@ -538,9 +538,3 @@ tbody tr.selected td:first-child { box-shadow: inset 4px 0 0 var(--ghost); color
 .side .tops { grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .side #top10 table { font-size: 13px; }
 .side #top10 th, .side #top10 td { padding: 7px 6px; }
-
-/* Terrain vertical, recadré : on limite sa hauteur à l'écran */
-.field-wrap { background: var(--turf); display: flex; justify-content: center; }
-.field { width: 100%; height: auto; max-height: 78vh; }
-.field .yard-number text { text-anchor: middle; }
-.field .endzone-label { dominant-baseline: central; }
