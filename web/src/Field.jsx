@@ -26,13 +26,13 @@ function vectorEnd(p) {
 function kindOf(p, play) {
   if (p.role === 'football') return 'ball'
   if (p.nflId === play.target_id) return 'target'
-  if (p.nflId === play.ghost_id) return 'ghost'
+  if (play.ghost_id != null && p.nflId === play.ghost_id) return 'ghost'
   if (p.role === 'Pass Route') return 'receiver'
   if (p.role === 'Coverage' || p.role === 'Pass Rush') return 'defense'
   return 'offense'
 }
 
-export default function Field({ play }) {
+export default function Field({ play, selectedId }) {
   const qb = play.frame.find((p) => p.role === 'Pass')
   const target = play.frame.find((p) => p.nflId === play.target_id)
 
@@ -123,8 +123,10 @@ export default function Field({ play }) {
         const cy = flip(p.y)
         const kind = kindOf(p, play)
         const isKey = kind === 'target' || kind === 'ghost'
+        const isSelected = selectedId != null && p.nflId === selectedId
         return (
           <g key={p.nflId ?? `ball-${i}`}>
+            {isSelected && <circle className="selected-ring" cx={cx} cy={cy} r={kind === 'ghost' ? 3 : 2} />}
             {kind === 'ghost' ? (
               <g transform={`translate(${cx} ${cy})`}>
                 <circle className="ghost-halo" r="3.2" filter="url(#ghost-glow)" />
@@ -143,8 +145,8 @@ export default function Field({ play }) {
                 {p.xyards.toFixed(1)} xYds
               </text>
             )}
-            {isKey && (
-              <text className="pname" x={cx + 2.4} y={cy - 1.5}>
+            {(isKey || isSelected) && (
+              <text className={`pname ${isSelected ? 'pname-selected' : ''}`} x={cx + 2.4} y={cy - 1.5}>
                 {shortName(p.name)}
               </text>
             )}

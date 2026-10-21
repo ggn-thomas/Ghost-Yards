@@ -11,18 +11,19 @@ const DECISION_CLASS = { 'Bon choix': 'good', Discutable: 'meh', 'Mauvais choix'
 const MATRIX_CELLS = [
   { key: 'good_above', tone: 'good', title: 'Bon choix, bien exécuté', hint: 'Le QB voit juste et le jeu rapporte plus que prévu.' },
   { key: 'good_below', tone: 'meh', title: 'Bon choix, mal converti', hint: 'La bonne lecture, mais le jeu rapporte moins que prévu.' },
-  { key: 'bad_above', tone: 'meh', title: 'Mauvais choix, sauvé', hint: 'Un receveur ignoré offrait plus, mais la cible a fait mieux que prévu.' },
-  { key: 'bad_below', tone: 'bad', title: 'Mauvais choix, sanctionné', hint: 'Un receveur ignoré offrait plus, et la cible n\'a pas compensé.' },
+  { key: 'bad_above', tone: 'meh', title: 'Mauvais choix, sauvé', hint: 'Un receveur plus libre et plus rentable a été ignoré, mais la cible a fait mieux que prévu.' },
+  { key: 'bad_below', tone: 'bad', title: 'Mauvais choix, sanctionné', hint: 'Un receveur plus libre et plus rentable a été ignoré, et la cible n\'a pas compensé.' },
 ]
 
 const QB_SORTS = {
-  good_choice_pct: 'Bons choix',
-  ghost_yards_ceded_per_game: 'Ghost yards cédés / match',
+  good_vs_league: 'vs moyenne',
+  ghost_yards_ceded_per_game: 'Yards laissés / match',
   passes: 'Passes',
 }
 
 const playKey = (ref) => (ref ? `${ref.gameId}-${ref.playId}` : null)
 const fmt = (v, d = 1) => (v == null ? '–' : Number(v).toFixed(d))
+const fmtSigned = (v, d = 1) => (v == null ? '–' : `${v > 0 ? '+' : ''}${Number(v).toFixed(d)}`)
 const fmtInt = (v) => (v == null ? '–' : Number(v).toLocaleString('fr-FR'))
 
 export default function App() {
@@ -108,7 +109,7 @@ export default function App() {
         </div>
       </div>
 
-      <Ticker byPos={byPos} qbs={data.qbs ?? []} onSelect={(p) => selectPlayer(p, true)} />
+      <Ticker qbs={data.qbs ?? []} />
 
       <header className="hero" id="top">
         <div className="hero-inner reveal" style={{ '--d': 0 }}>
@@ -117,9 +118,11 @@ export default function App() {
           <h1>Ghost Yards</h1>
           <p className="tagline">Les yards que le receveur offrait, mais que le quarterback n'a jamais vus.</p>
           <p className="method">
-            Un modèle estime les yards attendus de chaque receveur à l'instant du lancer ; les ghost yards mesurent ce
-            que le receveur ignoré offrait de plus que la cible choisie.
+            Un modèle estime les yards attendus de chaque receveur à l'instant du lancer. Quand un receveur plus libre
+            et plus rentable a été ignoré, l'écart avec la cible choisie devient des ghost yards : des yards attendus
+            laissés sur la table.
           </p>
+          <Headline headline={data.meta?.headline} players={data.players ?? []} onSelect={(p) => selectPlayer(p, true)} />
         </div>
       </header>
 
@@ -190,9 +193,9 @@ export default function App() {
               </span>
             </div>
             <div className="stats">
-              <Stat value={fmt(player.ghost_yards_per_game)} label="ghost yards / match" big />
-              <Stat value={`#${player.rank_in_pos}`} label={`rang ${player.pos}`} />
-              <Stat value={`${player.score10}/10`} label="note" />
+              <Stat value={`#${player.rank_in_pos}`} label={`rang ${player.pos}`} big />
+              <Stat value={`${player.score10}/10`} label="note" big />
+              <Stat value={fmt(player.ghost_yards_per_game)} label="yards laissés / match" />
               <Stat value={player.games} label="matchs" />
               <Stat value={player.routes} label="tracés" />
             </div>
@@ -201,13 +204,13 @@ export default function App() {
           <p className="muted">Aucun joueur pour ce poste.</p>
         )}
 
-        <PlayView play={play} namesById={namesById} />
+        <PlayView play={play} namesById={namesById} selectedId={focus ? null : player?.nflId} />
       </section>
 
       <section className="panel reveal" style={{ '--d': 2 }} id="top10">
         <SectionHead
           title="Top 10 par poste"
-          sub="Ghost yards par match : les yards attendus laissés sur la table quand le receveur était la meilleure option ignorée. Cliquez sur un joueur pour voir son action fantôme."
+          sub="Classement par poste et note sur 10 : quels receveurs étaient le plus souvent l'option plus libre et plus rentable que le QB n'a pas choisie. Cliquez sur un joueur pour voir son action fantôme."
         />
         <div className="tops">
           {POSITIONS.map((k) => (
@@ -228,13 +231,13 @@ export default function App() {
             title="Le choix du QB, puis l'exécution"
             sub="Le QB a-t-il visé la meilleure option, et le jeu a-t-il rapporté plus ou moins que prévu ? Cliquez sur une case pour voir un exemple."
           />
-          <Matrix matrix={data.matrix} active={focus?.cell} onPick={showCell} />
+          <Matrix matrix={data.matrix} threshold={data.meta?.decision_threshold} active={focus?.cell} onPick={showCell} />
         </section>
 
         <section className="panel reveal" style={{ '--d': 4 }} id="quarterbacks">
           <SectionHead
             title="Les quarterbacks"
-            sub="Part des passes vers la meilleure option, et yards attendus laissés sur la table par match."
+            sub="Part de bons choix comparée à la moyenne de la ligue, en points. Le pourcentage brut est indiqué en petit."
           />
           <QbTable qbs={data.qbs ?? []} />
         </section>
@@ -261,35 +264,70 @@ export default function App() {
   )
 }
 
-function Ticker({ byPos, qbs, onSelect }) {
-  const bestQb = [...qbs].sort((a, b) => b.good_choice_pct - a.good_choice_pct)[0]
+const byLeague = (a, b) => (b.good_vs_league ?? -Infinity) - (a.good_vs_league ?? -Infinity)
+
+function Ticker({ qbs }) {
+  const top = [...qbs].sort(byLeague).slice(0, 5)
+  if (!top.length) return null
   return (
-    <div className="ticker" aria-label="Les numéros 1">
+    <div className="ticker" aria-label="Quarterbacks au-dessus de la moyenne">
       <div className="ticker-inner">
-        <span className="ticker-label">N°1</span>
-        {POSITIONS.map((k) => {
-          const p = byPos[k][0]
-          if (!p) return null
+        <span className="ticker-label">QB</span>
+        {top.map((q, i) => (
+          <a key={q.nflId} className="ticker-item" href="#quarterbacks">
+            <span className="ticker-pos">#{i + 1}</span>
+            <span className="ticker-name">{q.name}</span>
+            <span className="ticker-team">{q.team}</span>
+            <span className="ticker-value">{fmtSigned(q.good_vs_league)} pts</span>
+            <span className="ticker-unit">vs moyenne</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// Accroche : les trois leaders fournis par meta.headline (pas de total cumulé).
+function Headline({ headline, players, onSelect }) {
+  const leaders = headline?.leaders
+  if (!leaders) return null
+  const find = (k, l) => players.find((p) => p.pos === k && p.name === l.name && p.team === l.team)
+  return (
+    <div className="headline">
+      <p className="headline-title">Les receveurs que les QB ont le plus laissés de côté</p>
+      <div className="leaders">
+        {POSITIONS.filter((k) => leaders[k]).map((k) => {
+          const l = leaders[k]
+          const p = find(k, l)
           return (
-            <button key={k} className="ticker-item" onClick={() => onSelect(p)}>
-              <span className="ticker-pos">{k}</span>
-              <span className="ticker-name">{p.name}</span>
-              <span className="ticker-team">{p.team}</span>
-              <span className="ticker-value">{fmt(p.ghost_yards_per_game)}</span>
-              <span className="ticker-unit">GY/match</span>
+            <button key={k} className="leader" onClick={() => p && onSelect(p)} disabled={!p}>
+              <span className="leader-pos">N°1 {k}</span>
+              <span className="leader-name">{l.name}</span>
+              <span className="leader-team">{l.team}</span>
+              <span className="leader-value">
+                {fmt(l.ghost_yards_per_game)} <small>yards attendus laissés sur la table / match</small>
+              </span>
+              {p && <span className="leader-cta">Voir son action fantôme →</span>}
             </button>
           )
         })}
-        {bestQb && (
-          <a className="ticker-item" href="#quarterbacks">
-            <span className="ticker-pos">QB</span>
-            <span className="ticker-name">{bestQb.name}</span>
-            <span className="ticker-team">{bestQb.team}</span>
-            <span className="ticker-value">{fmt(bestQb.good_choice_pct)} %</span>
-            <span className="ticker-unit">bons choix</span>
-          </a>
-        )}
       </div>
+      {(headline.pct_good_choice != null || headline.pct_bad_choice != null) && (
+        <p className="headline-facts">
+          {headline.pct_good_choice != null && (
+            <span>
+              <strong className="good-text">{fmt(headline.pct_good_choice, 0)} %</strong> des passes vont vers la bonne
+              option
+            </span>
+          )}
+          {headline.pct_bad_choice != null && (
+            <span>
+              <strong className="bad-text">{fmt(headline.pct_bad_choice, 0)} %</strong> ignorent un receveur plus libre et
+              plus rentable
+            </span>
+          )}
+        </p>
+      )}
     </div>
   )
 }
@@ -312,18 +350,23 @@ function Stat({ value, label, big }) {
   )
 }
 
-function PlayView({ play, namesById }) {
+function PlayView({ play, namesById, selectedId }) {
   if (!play) return <div className="unavailable">Action indisponible</div>
   const hasVectors = play.frame.some((p) => p.s != null && p.dir != null)
+  const hasGhost = play.ghost_id != null
   const targetName = namesById.get(play.target_id)
-  const ghostName = namesById.get(play.ghost_id)
+  const ghostName = hasGhost ? namesById.get(play.ghost_id) : null
   return (
     <div className="play">
       <div className="legend">
-        <span><i className="sw target" /> Cible réelle{targetName ? ` (${targetName})` : ''}</span>
-        <span>
-          <GhostLogo size={16} /> Receveur ignoré{ghostName ? ` (${ghostName})` : ''}
-        </span>
+        <span><i className="sw target" /> Cible choisie{targetName ? ` (${targetName})` : ''}</span>
+        {hasGhost ? (
+          <span>
+            <GhostLogo size={16} /> Plus libre et plus rentable, ignoré{ghostName ? ` (${ghostName})` : ''}
+          </span>
+        ) : (
+          <span className="no-ghost">Pas d'option plus ouverte</span>
+        )}
         <span><i className="sw receiver" /> Autres receveurs</span>
         <span><i className="sw defense" /> Défense</span>
         <span><i className="sw los" /> Ligne de scrimmage</span>
@@ -332,11 +375,15 @@ function PlayView({ play, namesById }) {
         )}
       </div>
       <div className="field-wrap" key={playKey(play)}>
-        <Field play={play} />
-        {play.ghost_yards > 0 && (
+        <Field play={play} selectedId={selectedId} />
+        {hasGhost && play.ghost_yards > 0 ? (
           <div className="field-callout">
             <span className="callout-value">+{fmt(play.ghost_yards)}</span>
-            <span className="callout-label">ghost yards sur l'action</span>
+            <span className="callout-label">yards attendus laissés sur la table</span>
+          </div>
+        ) : (
+          <div className="field-callout neutral">
+            <span className="callout-label">Pas d'option plus ouverte</span>
           </div>
         )}
       </div>
@@ -345,7 +392,7 @@ function PlayView({ play, namesById }) {
         <span className="badge neutral">Couverture : {play.coverage}</span>
         <span className={`badge ${DECISION_CLASS[play.decision] ?? 'neutral'}`}>
           {play.decision}
-          {play.gap > 0 && ` · +${fmt(play.gap)} yds offerts ailleurs`}
+          {hasGhost && play.gap > 0 && ` · +${fmt(play.gap)} yds attendus chez un receveur plus libre`}
         </span>
         <span className={`badge ${play.execution?.startsWith('Au-dessus') ? 'good' : 'bad'}`}>
           {play.execution} · {fmt(play.actual_yards)} yds réels contre {fmt(play.target_xyards)} attendus
@@ -362,11 +409,11 @@ function TopTable({ pos, rows, selected, onSelect }) {
       <table>
         <thead>
           <tr>
-            <th>#</th>
+            <th className="sorted">Rang</th>
             <th>Joueur</th>
             <th>Équipe</th>
-            <th className="num sorted">GY/match</th>
             <th className="num">Note</th>
+            <th className="num" title="Yards attendus laissés sur la table par match">Yds / match</th>
           </tr>
         </thead>
         <tbody>
@@ -378,13 +425,13 @@ function TopTable({ pos, rows, selected, onSelect }) {
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && onSelect(p)}
             >
-              <td className="rank">{p.rank_in_pos}</td>
+              <td className="rank sorted">{p.rank_in_pos}</td>
               <td className="name">{p.name}</td>
               <td className="team">{p.team}</td>
-              <td className="num strong sorted">{fmt(p.ghost_yards_per_game)}</td>
               <td className="num">
                 <Score value={p.score10} />
               </td>
+              <td className="num small-num">{fmt(p.ghost_yards_per_game)}</td>
             </tr>
           ))}
           {rows.length === 0 && (
@@ -406,39 +453,47 @@ function Score({ value }) {
   )
 }
 
-function Matrix({ matrix, active, onPick }) {
+function Matrix({ matrix, threshold, active, onPick }) {
   if (!matrix) return <p className="muted">Matrice indisponible.</p>
   return (
-    <div className="matrix">
-      <span className="axis axis-x axis-x1">Au-dessus de l'attendu</span>
-      <span className="axis axis-x axis-x2">En dessous</span>
-      <span className="axis axis-y axis-y1">Bon choix</span>
-      <span className="axis axis-y axis-y2">Mauvais choix</span>
-      {MATRIX_CELLS.map((c) => {
-        const cell = matrix[c.key] ?? { count: 0, examples: [] }
-        const disabled = !cell.examples?.length
-        return (
-          <button
-            key={c.key}
-            className={`cell ${c.tone} ${active === c.key ? 'active' : ''}`}
-            style={{ gridArea: c.key }}
-            onClick={() => onPick(c.key)}
-            disabled={disabled}
-            title={disabled ? 'Aucun exemple disponible' : 'Voir un exemple sur le terrain'}
-          >
-            <span className="cell-count">{fmtInt(cell.count)}</span>
-            <span className="cell-title">{c.title}</span>
-            <span className="cell-cta">{disabled ? 'Aucun exemple' : 'Voir un exemple →'}</span>
-          </button>
-        )
-      })}
-    </div>
+    <>
+      <div className="matrix">
+        <span className="axis axis-x axis-x1">Au-dessus de l'attendu</span>
+        <span className="axis axis-x axis-x2">En dessous</span>
+        <span className="axis axis-y axis-y1">Bon choix</span>
+        <span className="axis axis-y axis-y2">Mauvais choix</span>
+        {MATRIX_CELLS.map((c) => {
+          const cell = matrix[c.key] ?? { count: 0, examples: [] }
+          const disabled = !cell.examples?.length
+          return (
+            <button
+              key={c.key}
+              className={`cell ${c.tone} ${active === c.key ? 'active' : ''}`}
+              style={{ gridArea: c.key }}
+              onClick={() => onPick(c.key)}
+              disabled={disabled}
+              title={disabled ? 'Aucun exemple disponible' : 'Voir un exemple sur le terrain'}
+            >
+              <span className="cell-count">{fmtInt(cell.count)}</span>
+              <span className="cell-title">{c.title}</span>
+              <span className="cell-cta">{disabled ? 'Aucun exemple' : 'Voir un exemple →'}</span>
+            </button>
+          )
+        })}
+      </div>
+      {threshold != null && (
+        <p className="matrix-note muted">
+          Mauvais choix : un receveur plus libre offrait au moins {threshold} yards attendus de plus que la cible. Les cas
+          intermédiaires (« Discutable ») ne sont pas comptés ici.
+        </p>
+      )}
+    </>
   )
 }
 
 function QbTable({ qbs }) {
-  const [sort, setSort] = useState('good_choice_pct')
-  const asc = sort === 'ghost_yards_ceded_per_game' // moins de yards cédés = mieux
+  const [sort, setSort] = useState('good_vs_league')
+  const asc = sort === 'ghost_yards_ceded_per_game' // moins de yards laissés = mieux
   const rows = [...qbs].sort((a, b) => (asc ? a[sort] - b[sort] : b[sort] - a[sort]))
   if (!qbs.length) return <p className="muted">Aucun quarterback.</p>
   return (
@@ -454,27 +509,27 @@ function QbTable({ qbs }) {
         <table className="qb-table">
           <thead>
             <tr>
+              <th>Rang</th>
               <th>Quarterback</th>
               <th>Équipe</th>
-              <th className={sort === 'good_choice_pct' ? 'sorted' : ''}>Bons choix</th>
-              <th className={`num ${sort === 'ghost_yards_ceded_per_game' ? 'sorted' : ''}`}>GY cédés / match</th>
+              <th className={sort === 'good_vs_league' ? 'sorted' : ''}>Bons choix vs moyenne</th>
+              <th className={`num ${sort === 'ghost_yards_ceded_per_game' ? 'sorted' : ''}`}>Yds laissés / match</th>
               <th className={`num ${sort === 'passes' ? 'sorted' : ''}`}>Passes</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((q) => (
+            {rows.map((q, i) => (
               <tr key={q.nflId} className="static">
+                <td className="rank">{i + 1}</td>
                 <td className="name">{q.name}</td>
                 <td className="team">{q.team}</td>
-                <td className={sort === 'good_choice_pct' ? 'sorted' : ''}>
-                  <span className="pct">
-                    <span className="pct-bar">
-                      <span style={{ width: `${Math.min(100, Math.max(0, q.good_choice_pct))}%` }} />
-                    </span>
-                    <span className="pct-value">{fmt(q.good_choice_pct)} %</span>
+                <td className={sort === 'good_vs_league' ? 'sorted' : ''}>
+                  <span className={`vs-league ${q.good_vs_league > 0 ? 'up' : q.good_vs_league < 0 ? 'down' : ''}`}>
+                    {fmtSigned(q.good_vs_league)} pts
                   </span>
+                  <span className="raw-pct">{fmt(q.good_choice_pct)} % de bons choix</span>
                 </td>
-                <td className={`num strong ${sort === 'ghost_yards_ceded_per_game' ? 'sorted' : ''}`}>
+                <td className={`num ${sort === 'ghost_yards_ceded_per_game' ? 'sorted' : ''}`}>
                   {fmt(q.ghost_yards_ceded_per_game)}
                 </td>
                 <td className={`num ${sort === 'passes' ? 'sorted' : ''}`}>{fmtInt(q.passes)}</td>

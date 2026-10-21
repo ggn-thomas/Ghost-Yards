@@ -123,6 +123,35 @@ a { color: inherit; }
 .tagline::before { content: ''; display: block; width: 56px; height: 4px; background: var(--ghost); margin: 0 0 14px; }
 .method { margin: 12px 0 0; max-width: 760px; color: var(--text-2); font-size: 16px; }
 
+/* Accroche : leaders */
+.headline { margin-top: 26px; }
+.headline-title { margin: 0 0 10px; font: 800 14px var(--font-body); text-transform: uppercase; color: var(--muted); }
+.leaders { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px; }
+.leader {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 14px 16px;
+  background: var(--dark);
+  color: #fff;
+  border: 0;
+  border-top: 5px solid var(--ghost-neon);
+  text-align: left;
+  cursor: pointer;
+}
+.leader:disabled { cursor: default; }
+.leader:hover:not(:disabled) { background: var(--dark-2); }
+.leader-pos { font: italic 800 15px var(--font-label); color: var(--ghost-neon); letter-spacing: 0.04em; }
+.leader-name { font: 800 22px / 1.1 var(--font-body); }
+.leader-team { font: 600 13px var(--font-label); color: #a9a9b8; letter-spacing: 0.06em; }
+.leader-value { margin-top: 6px; font: italic 800 26px / 1 var(--font-label); }
+.leader-value small { display: block; margin-top: 2px; font: 600 12px var(--font-body); font-style: normal; color: #c9c9d4; }
+.leader-cta { margin-top: 8px; font: 700 13px var(--font-body); color: var(--ghost-neon); }
+.headline-facts { display: flex; flex-wrap: wrap; gap: 6px 24px; margin: 14px 0 0; font-size: 16px; }
+.good-text { color: var(--good); }
+.bad-text { color: var(--bad); }
+
 /* Page */
 .page { max-width: 1240px; margin: 0 auto; padding: 4px 16px 56px; }
 .reveal { animation: rise 0.5s ease both; animation-delay: calc(var(--d, 0) * 70ms); }
@@ -240,6 +269,9 @@ select {
 }
 .callout-value { font: italic 800 34px / 1 var(--font-label); color: var(--ghost-neon); }
 .callout-label { font: 600 12px var(--font-label); letter-spacing: 0.08em; text-transform: uppercase; color: #c9c9d4; }
+.field-callout.neutral { border-left-color: #9aa4b5; }
+.field-callout.neutral .callout-label { font-size: 14px; color: #fff; }
+.no-ghost { font-weight: 700; color: var(--good); }
 .description { margin: 14px 0 10px; font-size: 16px; color: var(--text-2); }
 .badges { display: flex; flex-wrap: wrap; gap: 8px; }
 .badge { padding: 4px 10px; font: 700 13px var(--font-body); border: 1px solid transparent; }
@@ -283,6 +315,8 @@ select {
 .field .xyds-ghost, .field .xyds-target { font-weight: 800; font-size: 1.9px; }
 .field .xyds-ghost { fill: var(--ghost-neon); }
 .field .xyds-target { fill: #ffd6da; }
+.field .selected-ring { fill: none; stroke: #ffd200; stroke-width: 0.35; stroke-dasharray: 0.9 0.4; }
+.field .pname-selected { fill: #ffd200; }
 .field .pname { fill: #fff; font: 700 1.5px var(--font-body); paint-order: stroke; stroke: rgba(0, 0, 0, 0.6); stroke-width: 0.3; }
 
 /* Fantôme vectoriel */
@@ -302,7 +336,7 @@ th.sorted { font-weight: 800; color: var(--text); }
 td { padding: 10px; border-bottom: 1px solid var(--line-soft); color: var(--text-2); }
 th.sorted, td.sorted { background: var(--sorted); }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
-td.rank { width: 30px; font-weight: 800; color: var(--muted); }
+td.rank { width: 44px; font: italic 800 20px var(--font-label); color: var(--text); }
 td.name { color: var(--blue); font-weight: 500; }
 tbody tr:hover td.name { text-decoration: underline; }
 td.team { color: var(--muted); font-weight: 600; font-size: 13px; }
@@ -371,6 +405,12 @@ tbody tr.selected td:first-child { box-shadow: inset 4px 0 0 var(--ghost); color
 .cell:disabled .cell-cta { color: var(--muted); }
 
 /* QB */
+.vs-league { display: block; font: italic 800 20px / 1.1 var(--font-label); color: var(--text); }
+.vs-league.up { color: var(--good); }
+.vs-league.down { color: var(--bad); }
+.raw-pct { display: block; font-size: 12px; color: var(--muted); }
+.small-num { color: var(--muted); font-size: 13px; }
+.matrix-note { margin: 12px 0 0; font-size: 13px; }
 .pct { display: inline-flex; align-items: center; gap: 10px; min-width: 160px; }
 .pct-bar { flex: 1; height: 8px; background: #e2e2e2; overflow: hidden; }
 .pct-bar span { display: block; height: 100%; background: var(--navy); }
