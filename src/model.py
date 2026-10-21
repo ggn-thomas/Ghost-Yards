@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.isotonic import IsotonicRegression
 from sklearn.model_selection import GroupKFold
 
 INT_VALUE = -10
@@ -40,6 +41,17 @@ def oof_predict(df):
         model = new_model().fit(train[FEATURES], train.y)
         df.iloc[test_idx, df.columns.get_loc("xyards")] = model.predict(df.iloc[test_idx][FEATURES])
         df.iloc[test_idx, df.columns.get_loc("baseline")] = train.y.mean()
+    return df
+
+
+def recalibrate(df):
+    # cross-fitted isotonic map raw OOF prediction -> mean actual yards, fitted on other folds' targets
+    df["xyards_raw"] = df.xyards
+    for train_idx, test_idx in GroupKFold(N_FOLDS).split(df, groups=df.gameId):
+        train = df.iloc[train_idx]
+        train = train[train.is_target]
+        iso = IsotonicRegression(out_of_bounds="clip").fit(train.xyards_raw, train.y)
+        df.iloc[test_idx, df.columns.get_loc("xyards")] = iso.predict(df.iloc[test_idx].xyards_raw)
     df["xyards"] = np.minimum(df.xyards, df.max_gain)
     return df
 
@@ -69,7 +81,7 @@ def plot_calibration(calib, path="out/calibration.png"):
 
 
 def run(int_value=INT_VALUE, verbose=True):
-    df = oof_predict(prepare(pd.read_parquet("out/receivers.parquet"), int_value))
+    df = recalibrate(oof_predict(prepare(pd.read_parquet("out/receivers.parquet"), int_value)))
     meta, calib = evaluate(df)
     meta["int_value"] = int_value
     if verbose:
