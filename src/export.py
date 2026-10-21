@@ -77,7 +77,8 @@ def frames(keys):
     f = f.merge(xy, on=["gameId", "playId", "nflId"], how="left")
     ball = f.team == "football"
     f.loc[ball, ["displayName", "pff_role"]] = "football"
-    return f
+    # stable order so re-running the pipeline does not rewrite unchanged files
+    return f.sort_values(["gameId", "playId", "nflId"], na_position="last")
 
 
 def play_json(p, frame):
