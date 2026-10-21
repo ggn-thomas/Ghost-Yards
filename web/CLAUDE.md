@@ -76,6 +76,21 @@ Règles :
 - QB : afficher `good_vs_league` (écart à la moyenne en points) plutôt que le % brut. Mettre en avant les rangs, pas les yards absolus.
 - `matrix` : `good_*` = bon choix, `bad_*` = mauvais choix ; `*_above` = au-dessus de l'attendu, `*_below` = en dessous. Les « Discutable » sont exclus.
 
+### Données complètes (ajout, rétrocompatible : les clés ci-dessus ne changent pas)
+- `all_plays` : les 7 227 actions **sans positions** : `gameId, playId, week, quarter, down, yardsToGo, offense, defense, qb_id,
+  description, coverage, passResult, los_x, target_id, ghost_id (nullable), target_xyards, ghost_xyards, ghost_yards,
+  actual_yards, gap, decision, execution`.
+- Positions d'une action : `fetch('/frames/<gameId>.json')` → `{"names": {"<nflId>": "Nom"}, "plays": {"<playId>": [frame]}}`.
+  `frame` a le même format que `plays[].frame`, sans `name` (utiliser `names[nflId]`). 122 fichiers d'environ 80 Ko : charger à la demande et mettre en cache.
+- `all_players` (468) : `nflId, name, team, pos, games, routes, targets, ghost_plays, ghost_yards_total, ghost_yards_per_game,
+  ghost_yards_per_100_routes, ranked`. N'afficher rang et note que si `ranked` (≥ 100 tracés, sinon échantillon trop petit).
+- `all_qbs` (57) : `nflId, name, team, passes, games, ghost_yards_total, good_choice_pct, bad_choice_pct, good_vs_league,
+  ghost_yards_ceded_per_game, ranked` (≥ 100 passes).
+- `teams` (32, attaque) : `team, passes, games, ghost_yards_total, ghost_yards_per_game, good_choice_pct, bad_choice_pct,
+  good_vs_league, top_ghost_player` (nflId du joueur le plus souvent fantôme de l'équipe).
+- `positions` : `pos, targets, target_xyards_mean, ghost_plays, ghost_yards_total, ghost_share_pct`.
+- `games` (122) : `gameId, week, gameDate, homeTeamAbbr, visitorTeamAbbr, teams: [{team, passes, ghost_yards, good_choice_pct}]`.
+
 ## Ce que la page doit contenir (par ordre de priorité)
 
 ### P1, le MVP (à finir en premier)

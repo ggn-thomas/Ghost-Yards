@@ -1,10 +1,13 @@
 """Write web/public/data.json (contract in web/CLAUDE.md) from the out/ artifacts."""
 import json
+from pathlib import Path
 import numpy as np
 import pandas as pd
+from src import breakdowns
 
 RAW = "data_raw/data"
 OUT_JSON = "web/public/data.json"
+FRAMES_DIR = Path("web/public/frames")
 TOP_GLOBAL = 20
 
 
@@ -17,8 +20,13 @@ def clean(v):
     return v
 
 
+INT_COLS = {"nflId", "target_id", "ghost_id", "qb_id", "top_ghost_player", "passes", "games", "routes", "targets",
+            "ghost_plays"}
+
+
 def records(df):
-    return [{k: clean(v) for k, v in row.items()} for row in df.to_dict("records")]
+    return [{k: id_or_none(v) if k in INT_COLS else clean(v) for k, v in row.items()}
+            for row in df.to_dict("records")]
 
 
 def id_or_none(v):
@@ -82,6 +90,25 @@ def plays_json(plays, keys):
     return [play_json(p, f.get_group((p.gameId, p.playId))) for p in sel.itertuples()]
 
 
+def game_frames(f):
+    # {"names": {nflId: name}, "plays": {playId: [frame rows]}} for one game
+    named = f.dropna(subset=["nflId"]).drop_duplicates("nflId")
+    names = {str(int(r.nflId)): r.displayName for r in named.itertuples()}
+    rows = {str(pid): [{"nflId": id_or_none(r.nflId), "x": clean(r.x), "y": clean(r.y), "role": r.pff_role,
+                        **({"xyards": clean(r.xyards)} if r.pff_role == "Pass Route" else {})}
+                       for r in g.itertuples()] for pid, g in f.groupby("playId")}
+    return {"names": names, "plays": rows}
+
+
+def write_frames(plays):
+    FRAMES_DIR.mkdir(parents=True, exist_ok=True)
+    f = frames(set(zip(plays.gameId, plays.playId)))
+    for game_id, g in f.groupby("gameId"):
+        with open(FRAMES_DIR / f"{game_id}.json", "w") as fh:
+            json.dump(game_frames(g), fh, ensure_ascii=False, separators=(",", ":"))
+    return f.gameId.nunique()
+
+
 def run():
     plays = pd.read_parquet("out/plays.parquet")
     ranked, qbs = pd.read_parquet("out/players.parquet"), pd.read_parquet("out/qbs.parquet")
@@ -90,9 +117,12 @@ def run():
     keys = selected_keys(plays, ranked, summary["matrix"])
     data = {"meta": {k: clean(v) for k, v in meta.items()}, "players": players_json(ranked),
             "qbs": qbs_json(qbs), "matrix": summary["matrix"], "plays": plays_json(plays, keys)}
+    data.update({k: records(v) for k, v in breakdowns.run().items()})
+    n_games = write_frames(plays)
     with open(OUT_JSON, "w") as fh:
         json.dump(data, fh, ensure_ascii=False, separators=(",", ":"))
-    print(f"export: {len(data['players'])} players, {len(data['qbs'])} QBs, {len(data['plays'])} plays -> {OUT_JSON}")
+    print(f"export: {len(data['players'])} players, {len(data['qbs'])} QBs, {len(data['plays'])} plays, "
+          f"{len(data['all_plays'])} all_plays, {n_games} frame files -> {OUT_JSON}")
 
 
 if __name__ == "__main__":
