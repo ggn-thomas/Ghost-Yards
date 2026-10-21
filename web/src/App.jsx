@@ -91,23 +91,42 @@ export default function App() {
   }
 
   return (
-    <div className="page">
-      {data.meta?.mock && <div className="mock-banner">Données factices · affichage de démonstration</div>}
+    <>
+      <div className="topbar">
+        <div className="topbar-inner">
+          <a className="brand" href="#top" aria-label="Ghost Yards, haut de page">
+            <GhostLogo size={30} />
+            <span>Ghost Yards</span>
+          </a>
+          <nav className="mainnav" aria-label="Sections">
+            <a href="#receveurs">Receveurs</a>
+            <a href="#top10">Top 10</a>
+            <a href="#matrice">Matrice QB</a>
+            <a href="#quarterbacks">Quarterbacks</a>
+            <a href="#modele">Le modèle</a>
+          </nav>
+        </div>
+      </div>
 
-      <header className="hero reveal" style={{ '--d': 0 }}>
-        <GhostLogo size={64} />
-        <p className="kicker">NFL Big Data Bowl · Saison 2021, semaines 1 à 8</p>
-        <h1>Ghost Yards</h1>
-        <p className="tagline">Les yards que le receveur offrait, mais que le quarterback n'a jamais vus.</p>
-        <p className="method">
-          Un modèle estime les yards attendus de chaque receveur à l'instant du lancer ; les ghost yards mesurent ce
-          que le receveur ignoré offrait de plus que la cible choisie.
-        </p>
+      <Ticker byPos={byPos} qbs={data.qbs ?? []} onSelect={(p) => selectPlayer(p, true)} />
+
+      <header className="hero" id="top">
+        <div className="hero-inner reveal" style={{ '--d': 0 }}>
+          {data.meta?.mock && <div className="mock-banner">Données factices · affichage de démonstration</div>}
+          <p className="kicker">Big Data Bowl · Tracking 2021, semaines 1 à 8 · Analyse</p>
+          <h1>Ghost Yards</h1>
+          <p className="tagline">Les yards que le receveur offrait, mais que le quarterback n'a jamais vus.</p>
+          <p className="method">
+            Un modèle estime les yards attendus de chaque receveur à l'instant du lancer ; les ghost yards mesurent ce
+            que le receveur ignoré offrait de plus que la cible choisie.
+          </p>
+        </div>
       </header>
 
-      <section className="panel spotlight reveal" style={{ '--d': 1 }} ref={stageRef}>
+    <div className="page">
+      <section className="panel spotlight reveal" style={{ '--d': 1 }} ref={stageRef} id="receveurs">
         <div className="controls">
-          <div className="seg" role="tablist" aria-label="Poste">
+          <div className="tabs" role="tablist" aria-label="Poste">
             {POSITIONS.map((k) => (
               <button
                 key={k}
@@ -185,7 +204,7 @@ export default function App() {
         <PlayView play={play} namesById={namesById} />
       </section>
 
-      <section className="panel reveal" style={{ '--d': 2 }}>
+      <section className="panel reveal" style={{ '--d': 2 }} id="top10">
         <SectionHead
           title="Top 10 par poste"
           sub="Ghost yards par match : les yards attendus laissés sur la table quand le receveur était la meilleure option ignorée. Cliquez sur un joueur pour voir son action fantôme."
@@ -204,7 +223,7 @@ export default function App() {
       </section>
 
       <div className="split">
-        <section className="panel reveal" style={{ '--d': 3 }}>
+        <section className="panel reveal" style={{ '--d': 3 }} id="matrice">
           <SectionHead
             title="Le choix du QB, puis l'exécution"
             sub="Le QB a-t-il visé la meilleure option, et le jeu a-t-il rapporté plus ou moins que prévu ? Cliquez sur une case pour voir un exemple."
@@ -212,7 +231,7 @@ export default function App() {
           <Matrix matrix={data.matrix} active={focus?.cell} onPick={showCell} />
         </section>
 
-        <section className="panel reveal" style={{ '--d': 4 }}>
+        <section className="panel reveal" style={{ '--d': 4 }} id="quarterbacks">
           <SectionHead
             title="Les quarterbacks"
             sub="Part des passes vers la meilleure option, et yards attendus laissés sur la table par match."
@@ -237,6 +256,40 @@ export default function App() {
       <footer className="footer">
         Ghost Yards est un projet d'analyse réalisé pendant un hackathon, pas une statistique officielle de la NFL.
       </footer>
+    </div>
+    </>
+  )
+}
+
+function Ticker({ byPos, qbs, onSelect }) {
+  const bestQb = [...qbs].sort((a, b) => b.good_choice_pct - a.good_choice_pct)[0]
+  return (
+    <div className="ticker" aria-label="Les numéros 1">
+      <div className="ticker-inner">
+        <span className="ticker-label">N°1</span>
+        {POSITIONS.map((k) => {
+          const p = byPos[k][0]
+          if (!p) return null
+          return (
+            <button key={k} className="ticker-item" onClick={() => onSelect(p)}>
+              <span className="ticker-pos">{k}</span>
+              <span className="ticker-name">{p.name}</span>
+              <span className="ticker-team">{p.team}</span>
+              <span className="ticker-value">{fmt(p.ghost_yards_per_game)}</span>
+              <span className="ticker-unit">GY/match</span>
+            </button>
+          )
+        })}
+        {bestQb && (
+          <a className="ticker-item" href="#quarterbacks">
+            <span className="ticker-pos">QB</span>
+            <span className="ticker-name">{bestQb.name}</span>
+            <span className="ticker-team">{bestQb.team}</span>
+            <span className="ticker-value">{fmt(bestQb.good_choice_pct)} %</span>
+            <span className="ticker-unit">bons choix</span>
+          </a>
+        )}
+      </div>
     </div>
   )
 }
@@ -312,7 +365,7 @@ function TopTable({ pos, rows, selected, onSelect }) {
             <th>#</th>
             <th>Joueur</th>
             <th>Équipe</th>
-            <th className="num">GY/match</th>
+            <th className="num sorted">GY/match</th>
             <th className="num">Note</th>
           </tr>
         </thead>
@@ -328,7 +381,7 @@ function TopTable({ pos, rows, selected, onSelect }) {
               <td className="rank">{p.rank_in_pos}</td>
               <td className="name">{p.name}</td>
               <td className="team">{p.team}</td>
-              <td className="num strong">{fmt(p.ghost_yards_per_game)}</td>
+              <td className="num strong sorted">{fmt(p.ghost_yards_per_game)}</td>
               <td className="num">
                 <Score value={p.score10} />
               </td>
@@ -403,9 +456,9 @@ function QbTable({ qbs }) {
             <tr>
               <th>Quarterback</th>
               <th>Équipe</th>
-              <th>Bons choix</th>
-              <th className="num">GY cédés / match</th>
-              <th className="num">Passes</th>
+              <th className={sort === 'good_choice_pct' ? 'sorted' : ''}>Bons choix</th>
+              <th className={`num ${sort === 'ghost_yards_ceded_per_game' ? 'sorted' : ''}`}>GY cédés / match</th>
+              <th className={`num ${sort === 'passes' ? 'sorted' : ''}`}>Passes</th>
             </tr>
           </thead>
           <tbody>
@@ -413,7 +466,7 @@ function QbTable({ qbs }) {
               <tr key={q.nflId} className="static">
                 <td className="name">{q.name}</td>
                 <td className="team">{q.team}</td>
-                <td>
+                <td className={sort === 'good_choice_pct' ? 'sorted' : ''}>
                   <span className="pct">
                     <span className="pct-bar">
                       <span style={{ width: `${Math.min(100, Math.max(0, q.good_choice_pct))}%` }} />
@@ -421,8 +474,10 @@ function QbTable({ qbs }) {
                     <span className="pct-value">{fmt(q.good_choice_pct)} %</span>
                   </span>
                 </td>
-                <td className="num strong">{fmt(q.ghost_yards_ceded_per_game)}</td>
-                <td className="num">{fmtInt(q.passes)}</td>
+                <td className={`num strong ${sort === 'ghost_yards_ceded_per_game' ? 'sorted' : ''}`}>
+                  {fmt(q.ghost_yards_ceded_per_game)}
+                </td>
+                <td className={`num ${sort === 'passes' ? 'sorted' : ''}`}>{fmtInt(q.passes)}</td>
               </tr>
             ))}
           </tbody>
@@ -436,7 +491,7 @@ function ModelBlock({ meta }) {
   if (!meta) return null
   const max = Math.max(meta.model_mae ?? 0, meta.baseline_mae ?? 0) || 1
   return (
-    <section className="panel model reveal" style={{ '--d': 5 }}>
+    <section className="panel model reveal" style={{ '--d': 5 }} id="modele">
       <SectionHead
         title="Le modèle"
         sub="Erreur moyenne en yards sur des matchs jamais vus à l'entraînement : plus c'est court, mieux c'est."
