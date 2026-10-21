@@ -1,0 +1,8 @@
+data_raw/
+out/
+*.parquet
+.venv/
+__pycache__/
+.DS_Store
+node_modules/
+web/dist/

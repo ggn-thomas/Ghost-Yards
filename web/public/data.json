@@ -1,0 +1,60 @@
+{
+  "meta": {"model_mae": 6.1, "baseline_mae": 7.4, "n_plays": 7800, "int_value": -10, "decision_threshold": 3, "mock": true},
+  "players": [
+    {"nflId": 1001, "name": "Mock Receveur A", "team": "AAA", "pos": "WR", "games": 8, "routes": 260,
+     "ghost_yards_per_game": 14.2, "rank_in_pos": 1, "score10": 10, "ghost_play": {"gameId": 1, "playId": 10}},
+    {"nflId": 1002, "name": "Mock Tight End B", "team": "BBB", "pos": "TE", "games": 7, "routes": 180,
+     "ghost_yards_per_game": 8.7, "rank_in_pos": 1, "score10": 10, "ghost_play": {"gameId": 1, "playId": 10}},
+    {"nflId": 1003, "name": "Mock Running Back C", "team": "AAA", "pos": "RB", "games": 8, "routes": 120,
+     "ghost_yards_per_game": 4.3, "rank_in_pos": 1, "score10": 10, "ghost_play": {"gameId": 2, "playId": 20}}
+  ],
+  "qbs": [
+    {"nflId": 2001, "name": "Mock Quarterback Q", "team": "AAA", "passes": 290,
+     "good_choice_pct": 71.5, "ghost_yards_ceded_per_game": 21.3}
+  ],
+  "matrix": {
+    "good_above": {"count": 2100, "examples": [{"gameId": 2, "playId": 20}]},
+    "good_below": {"count": 2600, "examples": []},
+    "bad_above":  {"count": 600,  "examples": []},
+    "bad_below":  {"count": 900,  "examples": [{"gameId": 1, "playId": 10}]}
+  },
+  "plays": [
+    {"gameId": 1, "playId": 10, "description": "(8:12) (Shotgun) Q.Quarterback pass short right to C.Back to AAA 38 for 3 yards.",
+     "coverage": "Zone", "los_x": 35.0, "target_id": 1003, "ghost_id": 1001,
+     "target_xyards": 3.1, "ghost_xyards": 12.4, "ghost_yards": 9.3, "actual_yards": 3.0, "gap": 9.3,
+     "decision": "Mauvais choix", "execution": "En dessous",
+     "frame": [
+       {"nflId": 2001, "name": "Mock Quarterback Q", "x": 28.5, "y": 26.6, "role": "Pass"},
+       {"nflId": 1001, "name": "Mock Receveur A", "x": 52.0, "y": 10.5, "role": "Pass Route", "xyards": 12.4},
+       {"nflId": 1002, "name": "Mock Tight End B", "x": 44.0, "y": 30.0, "role": "Pass Route", "xyards": 6.8},
+       {"nflId": 1003, "name": "Mock Running Back C", "x": 37.0, "y": 40.0, "role": "Pass Route", "xyards": 3.1},
+       {"nflId": 1004, "name": "Mock Receveur D", "x": 50.0, "y": 46.0, "role": "Pass Route", "xyards": 5.2},
+       {"nflId": 3001, "name": "Mock Def 1", "x": 55.0, "y": 14.0, "role": "Coverage"},
+       {"nflId": 3002, "name": "Mock Def 2", "x": 46.0, "y": 28.0, "role": "Coverage"},
+       {"nflId": 3003, "name": "Mock Def 3", "x": 39.0, "y": 38.5, "role": "Coverage"},
+       {"nflId": 3004, "name": "Mock Def 4", "x": 51.5, "y": 44.0, "role": "Coverage"},
+       {"nflId": 3005, "name": "Mock Def 5", "x": 60.0, "y": 26.0, "role": "Coverage"},
+       {"nflId": 3006, "name": "Mock Def 6", "x": 33.0, "y": 25.0, "role": "Pass Rush"},
+       {"nflId": 3007, "name": "Mock Def 7", "x": 32.5, "y": 29.0, "role": "Pass Rush"},
+       {"nflId": 4001, "name": "Mock OL 1", "x": 32.0, "y": 25.5, "role": "Pass Block"},
+       {"nflId": 4002, "name": "Mock OL 2", "x": 31.8, "y": 28.5, "role": "Pass Block"},
+       {"nflId": null, "name": "football", "x": 28.8, "y": 26.4, "role": "football"}
+     ]},
+    {"gameId": 2, "playId": 20, "description": "(2:40) Q.Quarterback pass deep left to A.Receveur to BBB 20 for 25 yards.",
+     "coverage": "Man", "los_x": 55.0, "target_id": 1001, "ghost_id": 1002,
+     "target_xyards": 11.0, "ghost_xyards": 9.5, "ghost_yards": 0.0, "actual_yards": 25.0, "gap": -1.5,
+     "decision": "Bon choix", "execution": "Au-dessus de l'attendu",
+     "frame": [
+       {"nflId": 2001, "name": "Mock Quarterback Q", "x": 48.0, "y": 26.0, "role": "Pass"},
+       {"nflId": 1001, "name": "Mock Receveur A", "x": 75.0, "y": 8.0, "role": "Pass Route", "xyards": 11.0},
+       {"nflId": 1002, "name": "Mock Tight End B", "x": 63.0, "y": 22.0, "role": "Pass Route", "xyards": 9.5},
+       {"nflId": 1003, "name": "Mock Running Back C", "x": 57.0, "y": 36.0, "role": "Pass Route", "xyards": 4.0},
+       {"nflId": 3001, "name": "Mock Def 1", "x": 74.0, "y": 10.0, "role": "Coverage"},
+       {"nflId": 3002, "name": "Mock Def 2", "x": 64.5, "y": 25.0, "role": "Coverage"},
+       {"nflId": 3003, "name": "Mock Def 3", "x": 58.5, "y": 34.5, "role": "Coverage"},
+       {"nflId": 3006, "name": "Mock Def 6", "x": 51.0, "y": 25.0, "role": "Pass Rush"},
+       {"nflId": 4001, "name": "Mock OL 1", "x": 52.0, "y": 26.0, "role": "Pass Block"},
+       {"nflId": null, "name": "football", "x": 48.2, "y": 26.2, "role": "football"}
+     ]}
+  ]
+}
