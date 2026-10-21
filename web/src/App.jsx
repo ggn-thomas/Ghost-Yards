@@ -142,40 +142,8 @@ export default function App() {
       </header>
 
     <div className="page">
+      <div className="stage-grid">
       <section className="panel spotlight reveal" style={{ '--d': 1 }} ref={stageRef} id="receveurs">
-        <div className="controls">
-          <div className="tabs" role="tablist" aria-label="Poste">
-            {POSITIONS.map((k) => (
-              <button
-                key={k}
-                role="tab"
-                aria-selected={pos === k && !focus}
-                className={pos === k && !focus ? 'active' : ''}
-                onClick={() => {
-                  setPos(k)
-                  setSelectedId(null)
-                  reset()
-                }}
-              >
-                {k}
-              </button>
-            ))}
-          </div>
-          <select
-            value={player?.nflId ?? ''}
-            onChange={(e) => {
-              setSelectedId(Number(e.target.value))
-              reset()
-            }}
-            aria-label="Joueur"
-          >
-            {list.map((p) => (
-              <option key={p.nflId} value={p.nflId}>
-                #{p.rank_in_pos} {p.name} ({p.team})
-              </option>
-            ))}
-          </select>
-        </div>
 
         {custom ? (
           <div className="focus-bar">
@@ -235,7 +203,8 @@ export default function App() {
         <PlayView play={play} namesById={namesById} selectedId={focus || custom ? null : player?.nflId} />
       </section>
 
-      <Explorer data={data} namesById={namesById} onShow={showCustom} />
+      <Explorer data={data} onShow={showCustom} />
+      </div>
 
       <section className="panel reveal" style={{ '--d': 2 }} id="top10">
         <SectionHead
@@ -761,7 +730,9 @@ function Explorer({ data, onShow }) {
                   <td className="team">
                     {DOWN_LABEL[p.down] ?? p.down} & {p.yardsToGo}
                   </td>
-                  <td className="name">{loading === p.playId ? 'Chargement…' : p.description}</td>
+                  <td className="name">
+                    <span className="clamp">{loading === p.playId ? 'Chargement…' : p.description}</span>
+                  </td>
                   <td className="num strong sorted">{p.ghost_yards > 0 ? `+${fmt(p.ghost_yards)}` : '–'}</td>
                 </tr>
               ))}

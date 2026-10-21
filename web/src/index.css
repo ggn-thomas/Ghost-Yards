@@ -506,3 +506,24 @@ tbody tr.selected td:first-child { box-shadow: inset 4px 0 0 var(--ghost); color
 .plays-list td.name { color: var(--text-2); font-weight: 400; }
 .plays-list tbody tr:hover td.name { color: var(--blue); text-decoration: none; }
 .unavailable.small { padding: 16px; font-size: 14px; }
+
+/* Terrain à gauche, explorateur à droite */
+.stage-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; align-items: start; }
+.stage-grid > .panel { margin-top: 20px; }
+.stage-grid #equipes { position: sticky; top: 76px; max-height: calc(100vh - 96px); overflow-y: auto; }
+.stage-grid #equipes .explorer-controls select { flex: 1 1 100%; }
+.stage-grid .games { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.stage-grid .plays-list { max-height: none; overflow: visible; }
+.stage-grid .plays-list table { font-size: 13px; }
+.stage-grid .plays-list th, .stage-grid .plays-list td { padding: 8px 6px; }
+.stage-grid .plays-list .clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.player-card, .focus-bar { margin-top: 0; }
+@media (max-width: 1080px) {
+  .stage-grid { grid-template-columns: minmax(0, 1fr); }
+  .stage-grid #equipes { position: static; max-height: none; }
+  .stage-grid .plays-list { max-height: 520px; overflow-y: auto; }
+}
+.stage-grid .games { gap: 6px; }
+.stage-grid .game { padding: 6px 10px; border-top-width: 3px; }
+.stage-grid .game-teams { font-size: 14px; }
+.stage-grid .game-date { display: none; }
