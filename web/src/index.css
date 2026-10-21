@@ -544,3 +544,16 @@ tbody tr.selected td:first-child { box-shadow: inset 4px 0 0 var(--ghost); color
 .field { width: 100%; height: auto; max-height: 78vh; }
 .field .yard-number text { text-anchor: middle; }
 .field .endzone-label { dominant-baseline: central; }
+
+/* Terrain entier à la verticale dans une colonne étroite, colonne de droite élargie */
+.stage-grid { grid-template-columns: clamp(360px, 30vw, 500px) minmax(0, 1fr); }
+.field { max-height: 88vh; }
+.stage-grid .verdict { flex-direction: column; align-items: flex-start; gap: 6px; }
+.stage-grid .verdict-value { font-size: 44px; }
+.stage-grid .player-card .stats { width: 100%; }
+.stage-grid .player-id h2 { font-size: 32px; }
+.side .tops { grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.stage-grid .games { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+@media (max-width: 1080px) {
+  .stage-grid { grid-template-columns: minmax(0, 1fr); }
+}

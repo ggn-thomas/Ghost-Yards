@@ -42,10 +42,6 @@ export default function Field({ play, selectedId }) {
   const order = { 'Pass Block': 0, 'Pass Rush': 0, Coverage: 1, Pass: 2, 'Pass Route': 3, football: 4 }
   const players = [...play.frame].sort((a, b) => (order[a.role] ?? 0) - (order[b.role] ?? 0))
 
-  // Recadrage d'affichage autour de l'action (tous les joueurs restent visibles).
-  const xs = play.frame.map((p) => p.x)
-  const lo = Math.max(0, Math.min(play.los_x - 8, ...xs) - 3)
-  const hi = Math.min(W, Math.max(play.los_x + 25, ...xs) + 5)
   const [qx, qy] = qb ? S(qb.x, qb.y) : [0, 0]
   const [tx, ty] = target ? S(target.x, target.y) : [0, 0]
   const [, losY] = S(play.los_x, 0)
@@ -53,7 +49,7 @@ export default function Field({ play, selectedId }) {
   return (
     <svg
       className="field"
-      viewBox={`0 ${W - hi} ${H} ${hi - lo}`}
+      viewBox={`0 0 ${H} ${W}`}
       role="img"
       aria-label="Positions des joueurs au moment du lancer, l'attaque monte vers le haut"
     >
