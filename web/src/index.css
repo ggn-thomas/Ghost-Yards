@@ -488,3 +488,21 @@ tbody tr.selected td:first-child { box-shadow: inset 4px 0 0 var(--ghost); color
   *, *::before, *::after { animation: none !important; transition: none !important; }
   html { scroll-behavior: auto; }
 }
+
+/* Explorer par équipe */
+.explorer-controls { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; }
+.explorer-controls select { margin: 0; flex: 0 1 360px; }
+.check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-2); cursor: pointer; }
+.games { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 16px; }
+.game { display: grid; gap: 1px; padding: 10px 12px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--line); cursor: pointer; }
+.game:hover { background: var(--surface-2); }
+.game.active { border-top-color: var(--blue); background: #f2f5fe; }
+.game-week { font: italic 800 15px var(--font-label); color: var(--blue); }
+.game-teams { font-weight: 800; font-size: 16px; }
+.game-date { font-size: 12px; color: var(--muted); }
+.game-gy { font-size: 12px; font-weight: 700; color: var(--ghost); }
+.plays-list { margin-top: 16px; max-height: 520px; overflow-y: auto; border: 1px solid var(--line); }
+.plays-list thead th { position: sticky; top: 0; background: var(--surface); z-index: 1; }
+.plays-list td.name { color: var(--text-2); font-weight: 400; }
+.plays-list tbody tr:hover td.name { color: var(--blue); text-decoration: none; }
+.unavailable.small { padding: 16px; font-size: 14px; }

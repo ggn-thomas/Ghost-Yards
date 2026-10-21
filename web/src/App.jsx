@@ -3,6 +3,7 @@ import Field from './Field.jsx'
 import { GhostLogo } from './Ghost.jsx'
 
 const POSITIONS = ['WR', 'TE', 'RB']
+const DECISION_CLASS = { 'Bon choix': 'good', Discutable: 'meh', 'Mauvais choix': 'bad' }
 const POS_LABEL = { WR: 'Wide receivers', TE: 'Tight ends', RB: 'Running backs' }
 
 
@@ -31,6 +32,7 @@ export default function App() {
   const [pos, setPos] = useState('WR')
   const [selectedId, setSelectedId] = useState(null)
   const [focus, setFocus] = useState(null) // { cell, index } quand une case de la matrice est affichée
+  const [custom, setCustom] = useState(null) // { play, title, sub } quand une action est choisie dans l'explorateur
   const stageRef = useRef(null)
 
   useEffect(() => {
@@ -58,6 +60,7 @@ export default function App() {
 
   const namesById = useMemo(() => {
     const m = new Map()
+    for (const p of [...(data?.all_players ?? []), ...(data?.all_qbs ?? [])]) m.set(p.nflId, p.name)
     for (const p of data?.plays ?? []) for (const f of p.frame) if (f.nflId != null) m.set(f.nflId, f.name)
     return m
   }, [data])
@@ -70,22 +73,36 @@ export default function App() {
 
   const focusCell = focus ? MATRIX_CELLS.find((c) => c.key === focus.cell) : null
   const focusExamples = focus ? (data.matrix?.[focus.cell]?.examples ?? []) : []
-  const play = focus
+  const play = custom
+    ? custom.play
+    : focus
     ? playsByKey.get(playKey(focusExamples[focus.index]))
     : player
       ? playsByKey.get(playKey(player.ghost_play))
       : null
+
+  const reset = () => {
+    setFocus(null)
+    setCustom(null)
+  }
+
+  const showCustom = (c) => {
+    setFocus(null)
+    setCustom(c)
+    scrollToStage()
+  }
 
   const scrollToStage = () => stageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
   const selectPlayer = (p, scroll = false) => {
     setPos(p.pos)
     setSelectedId(p.nflId)
-    setFocus(null)
+    reset()
     if (scroll) scrollToStage()
   }
 
   const showCell = (cell) => {
+    setCustom(null)
     setFocus({ cell, index: 0 })
     scrollToStage()
   }
@@ -100,6 +117,7 @@ export default function App() {
           </a>
           <nav className="mainnav" aria-label="Sections">
             <a href="#receveurs">Receveurs</a>
+            <a href="#equipes">Équipes</a>
             <a href="#top10">Top 10</a>
             <a href="#quarterbacks">Quarterbacks</a>
           </nav>
@@ -136,7 +154,7 @@ export default function App() {
                 onClick={() => {
                   setPos(k)
                   setSelectedId(null)
-                  setFocus(null)
+                  reset()
                 }}
               >
                 {k}
@@ -147,7 +165,7 @@ export default function App() {
             value={player?.nflId ?? ''}
             onChange={(e) => {
               setSelectedId(Number(e.target.value))
-              setFocus(null)
+              reset()
             }}
             aria-label="Joueur"
           >
@@ -159,7 +177,23 @@ export default function App() {
           </select>
         </div>
 
-        {focus ? (
+        {custom ? (
+          <div className="focus-bar">
+            <div>
+              <span className="lower-third-tag">Explorer</span>
+              <h2>{custom.title}</h2>
+              <p className="muted">{custom.sub}</p>
+            </div>
+            <div className="focus-actions">
+              <button className="ghost-btn" onClick={() => document.getElementById('equipes')?.scrollIntoView({ behavior: 'smooth' })}>
+                ↓ Autres actions
+              </button>
+              <button className="ghost-btn" onClick={reset}>
+                ← Revenir à {player?.name ?? 'la sélection'}
+              </button>
+            </div>
+          </div>
+        ) : focus ? (
           <div className="focus-bar">
             <div>
               <span className={`lower-third-tag ${focusCell.tone}`}>Matrice du QB</span>
@@ -175,7 +209,7 @@ export default function App() {
                   Exemple suivant ({focus.index + 1}/{focusExamples.length})
                 </button>
               )}
-              <button className="ghost-btn" onClick={() => setFocus(null)}>
+              <button className="ghost-btn" onClick={() => reset()}>
                 ← Revenir à {player?.name ?? 'la sélection'}
               </button>
             </div>
@@ -198,8 +232,10 @@ export default function App() {
           <p className="muted">Aucun joueur pour ce poste.</p>
         )}
 
-        <PlayView play={play} namesById={namesById} selectedId={focus ? null : player?.nflId} />
+        <PlayView play={play} namesById={namesById} selectedId={focus || custom ? null : player?.nflId} />
       </section>
+
+      <Explorer data={data} namesById={namesById} onShow={showCustom} />
 
       <section className="panel reveal" style={{ '--d': 2 }} id="top10">
         <SectionHead
@@ -357,8 +393,9 @@ const lastName = (n) => (n ? n.split(' ').slice(-1)[0] : '')
 function PlayView({ play, namesById, selectedId }) {
   if (!play) return <div className="unavailable">Action indisponible</div>
   const hasGhost = play.ghost_id != null && play.ghost_yards > 0
-  const targetName = namesById.get(play.target_id)
-  const ghostName = hasGhost ? namesById.get(play.ghost_id) : null
+  const nameOf = (id) => namesById.get(id) ?? play.frame.find((f) => f.nflId === id)?.name
+  const targetName = nameOf(play.target_id)
+  const ghostName = hasGhost ? nameOf(play.ghost_id) : null
   return (
     <div className="play">
       <div className="verdict">
@@ -394,6 +431,17 @@ function PlayView({ play, namesById, selectedId }) {
       <p className="description">
         <span className="muted">Action :</span> {play.description}
       </p>
+      <div className="badges">
+        {play.coverage && <span className="badge neutral">Couverture : {play.coverage}</span>}
+        {play.decision && (
+          <span className={`badge ${DECISION_CLASS[play.decision] ?? 'neutral'}`}>{play.decision}</span>
+        )}
+        {play.execution && (
+          <span className={`badge ${play.execution.startsWith('Au-dessus') ? 'good' : 'bad'}`}>
+            {play.execution} · {fmt(play.actual_yards)} yds réels contre {fmt(play.target_xyards)} attendus
+          </span>
+        )}
+      </div>
     </div>
   )
 }
@@ -578,5 +626,154 @@ function MaeBar({ label, value, max, accent }) {
       </span>
       <span className="mae-value">{fmt(value)} yds</span>
     </div>
+  )
+}
+
+// Positions d'un match chargées à la demande (un fichier par match), gardées en cache.
+const framesCache = new Map()
+function loadFrames(gameId) {
+  if (!framesCache.has(gameId)) {
+    const req = fetch(`/frames/${gameId}.json`).then((r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      return r.json()
+    })
+    req.catch(() => framesCache.delete(gameId))
+    framesCache.set(gameId, req)
+  }
+  return framesCache.get(gameId)
+}
+
+const DOWN_LABEL = { 1: '1er', 2: '2e', 3: '3e', 4: '4e' }
+
+function Explorer({ data, onShow }) {
+  const teams = useMemo(() => [...(data.teams ?? [])].sort((a, b) => a.team.localeCompare(b.team)), [data])
+  const [team, setTeam] = useState('')
+  const [gameId, setGameId] = useState(null)
+  const [onlyGhost, setOnlyGhost] = useState(true)
+  const [loading, setLoading] = useState(null)
+  const [error, setError] = useState(null)
+
+  const games = useMemo(
+    () =>
+      (data.games ?? [])
+        .filter((g) => g.homeTeamAbbr === team || g.visitorTeamAbbr === team)
+        .sort((a, b) => a.week - b.week),
+    [data, team],
+  )
+  const game = games.find((g) => g.gameId === gameId)
+  const plays = useMemo(
+    () =>
+      (data.all_plays ?? [])
+        .filter((p) => p.gameId === gameId && p.offense === team)
+        .filter((p) => !onlyGhost || (p.ghost_id != null && p.ghost_yards > 0))
+        .sort((a, b) => a.quarter - b.quarter || a.playId - b.playId),
+    [data, gameId, team, onlyGhost],
+  )
+  if (!data.all_plays || !data.games) return null
+
+  const open = async (p) => {
+    setLoading(p.playId)
+    setError(null)
+    try {
+      const f = await loadFrames(p.gameId)
+      const raw = f.plays?.[String(p.playId)]
+      if (!raw) throw new Error('positions absentes')
+      const frame = raw.map((x) => ({ ...x, name: x.nflId != null ? f.names?.[String(x.nflId)] : 'football' }))
+      const opp = p.offense === game.homeTeamAbbr ? `contre ${game.visitorTeamAbbr}` : `à ${game.homeTeamAbbr}`
+      onShow({
+        play: { ...p, frame },
+        title: `Semaine ${game.week} · ${p.offense} ${opp}`,
+        sub: `${p.quarter === 1 ? '1er' : `${p.quarter}e`} quart-temps · ${DOWN_LABEL[p.down] ?? p.down} & ${p.yardsToGo}`,
+      })
+    } catch (e) {
+      setError(`Action indisponible (${e.message})`)
+    } finally {
+      setLoading(null)
+    }
+  }
+
+  return (
+    <section className="panel reveal" style={{ '--d': 2 }} id="equipes">
+      <SectionHead
+        title="Explorer par équipe"
+        sub="Choisissez une équipe, puis un match : chaque passe s'affiche sur le terrain au moment du lancer."
+      />
+      <div className="explorer-controls">
+        <select
+          value={team}
+          onChange={(e) => {
+            setTeam(e.target.value)
+            setGameId(null)
+          }}
+          aria-label="Équipe"
+        >
+          <option value="">Choisir une équipe…</option>
+          {teams.map((t) => (
+            <option key={t.team} value={t.team}>
+              {t.team} · {fmt(t.ghost_yards_per_game)} yds laissés / match
+            </option>
+          ))}
+        </select>
+        <label className="check">
+          <input type="checkbox" checked={onlyGhost} onChange={(e) => setOnlyGhost(e.target.checked)} />
+          Seulement les actions avec des yards laissés sur la table
+        </label>
+      </div>
+
+      {team && (
+        <div className="games">
+          {games.map((g) => {
+            const t = g.teams?.find((x) => x.team === team)
+            const home = g.homeTeamAbbr === team
+            return (
+              <button
+                key={g.gameId}
+                className={`game ${g.gameId === gameId ? 'active' : ''}`}
+                onClick={() => setGameId(g.gameId)}
+              >
+                <span className="game-week">S{g.week}</span>
+                <span className="game-teams">{home ? `${team} – ${g.visitorTeamAbbr}` : `${team} @ ${g.homeTeamAbbr}`}</span>
+                <span className="game-date">{g.gameDate}</span>
+                {t && <span className="game-gy">{fmt(t.ghost_yards)} yds laissés</span>}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {error && <p className="unavailable small">{error}</p>}
+
+      {game && (
+        <div className="table-scroll plays-list">
+          <table>
+            <thead>
+              <tr>
+                <th>QT</th>
+                <th>Situation</th>
+                <th>Action</th>
+                <th className="num sorted">Yds laissés</th>
+              </tr>
+            </thead>
+            <tbody>
+              {plays.map((p) => (
+                <tr key={p.playId} onClick={() => open(p)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && open(p)}>
+                  <td className="rank">{p.quarter}</td>
+                  <td className="team">
+                    {DOWN_LABEL[p.down] ?? p.down} & {p.yardsToGo}
+                  </td>
+                  <td className="name">{loading === p.playId ? 'Chargement…' : p.description}</td>
+                  <td className="num strong sorted">{p.ghost_yards > 0 ? `+${fmt(p.ghost_yards)}` : '–'}</td>
+                </tr>
+              ))}
+              {plays.length === 0 && (
+                <tr className="static">
+                  <td colSpan={4} className="muted">Aucune action pour ce filtre.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
   )
 }
