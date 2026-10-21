@@ -9,7 +9,8 @@ Hackathon NFL Big Data Bowl, Paris (AWS x NFL), 21 octobre 2026. Équipe de 3.
 
 **Ghost Yards** : au moment du lancer, 3 à 5 receveurs sont disponibles, mais le QB n'en choisit qu'un.
 Un modèle (côté algo) estime les **xYards** (yards attendus) de chaque receveur à la frame du lancer.
-`ghost_yards` = combien un receveur ignoré offrait de plus que la cible réelle (`max(0, xYards_receveur - xYards_cible)`).
+`ghost_yards` = sur une action, combien le **meilleur** receveur ignoré (`ghost_id`) offrait de plus que la cible réelle.
+Une action = au plus une valeur, attribuée au seul `ghost_id`. Dire « yards attendus laissés sur la table », jamais « yards perdus ».
 Accroche : *« Les yards que le receveur offrait, mais que le quarterback n'a jamais vus. »*
 
 ## Répartition
