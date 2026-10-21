@@ -4,7 +4,7 @@ Nous avons construit **Ghost Yards**, une métrique qui estime à l'instant du l
 Elle révèle que dans 41 % des passes, un receveur plus libre offrait davantage, et qu'**Amari Cooper est le receveur le plus souvent laissé de côté alors qu'il était la meilleure option : 20,9 yards attendus par match** (Evan Engram chez les TE avec 13,5, D'Andre Swift chez les RB avec 6,1).
 Un commentateur l'utiliserait pour expliquer en direct qui était ouvert et ce que le choix du QB a coûté, et un coach ou un recruteur pour repérer les receveurs qui se démarquent sans être servis et les QB qui manquent leurs meilleures options.
 
-**Démo :** VERCEL_URL · **Méthode, validation et limites :** [algo.md](algo.md) · `python -m src.run_all` regénère `web/public/data.json`.
+**Démo :** https://ghostyards.vercel.app · **Méthode, validation et limites :** [algo.md](algo.md) · `python -m src.run_all` regénère `web/public/data.json`.
 
 ## Installer et tester
 Prérequis : Python 3.11 ou plus, git (et Node 18 ou plus pour l'interface).
