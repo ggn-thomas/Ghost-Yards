@@ -204,7 +204,7 @@ export default function App() {
       </section>
 
       <div className="side">
-        <Explorer data={data} onShow={showCustom} />
+        <Explorer data={data} onShow={showCustom} active={custom?.play} />
         <section className="panel reveal" style={{ '--d': 2 }} id="top10">
           <SectionHead
             title="Top 10 par poste"
@@ -616,7 +616,7 @@ function loadFrames(gameId) {
 
 const DOWN_LABEL = { 1: '1er', 2: '2e', 3: '3e', 4: '4e' }
 
-function Explorer({ data, onShow }) {
+function Explorer({ data, onShow, active }) {
   const teams = useMemo(() => [...(data.teams ?? [])].sort((a, b) => a.team.localeCompare(b.team)), [data])
   const [team, setTeam] = useState('')
   const [gameId, setGameId] = useState(null)
@@ -640,6 +640,14 @@ function Explorer({ data, onShow }) {
         .sort((a, b) => a.quarter - b.quarter || a.playId - b.playId),
     [data, gameId, team, onlyGhost],
   )
+  const activeIdx = active && active.gameId === gameId ? plays.findIndex((p) => p.playId === active.playId) : -1
+
+  // Garde l'action affichée visible dans la liste.
+  useEffect(() => {
+    if (!active) return
+    document.querySelector(`#equipes tr[data-play="${active.gameId}-${active.playId}"]`)?.scrollIntoView({ block: 'nearest' })
+  }, [active])
+
   if (!data.all_plays || !data.games) return null
 
   const open = async (p) => {
@@ -715,6 +723,24 @@ function Explorer({ data, onShow }) {
       {error && <p className="unavailable small">{error}</p>}
 
       {game && (
+        <div className="play-nav">
+          <button className="ghost-btn" disabled={activeIdx <= 0} onClick={() => open(plays[activeIdx - 1])}>
+            ← Action précédente
+          </button>
+          <span className="muted">
+            {activeIdx >= 0 ? `${activeIdx + 1} / ${plays.length}` : `${plays.length} actions`}
+          </span>
+          <button
+            className="ghost-btn"
+            disabled={!plays.length || activeIdx >= plays.length - 1}
+            onClick={() => open(plays[activeIdx + 1])}
+          >
+            Action suivante →
+          </button>
+        </div>
+      )}
+
+      {game && (
         <div className="table-scroll plays-list">
           <table>
             <thead>
@@ -727,7 +753,14 @@ function Explorer({ data, onShow }) {
             </thead>
             <tbody>
               {plays.map((p) => (
-                <tr key={p.playId} onClick={() => open(p)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && open(p)}>
+                <tr
+                  key={p.playId}
+                  data-play={`${p.gameId}-${p.playId}`}
+                  className={activeIdx >= 0 && plays[activeIdx].playId === p.playId ? 'selected' : ''}
+                  onClick={() => open(p)}
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && open(p)}
+                >
                   <td className="rank">{p.quarter}</td>
                   <td className="team">
                     {DOWN_LABEL[p.down] ?? p.down} & {p.yardsToGo}

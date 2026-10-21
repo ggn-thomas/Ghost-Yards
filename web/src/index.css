@@ -538,3 +538,10 @@ tbody tr.selected td:first-child { box-shadow: inset 4px 0 0 var(--ghost); color
 .side .tops { grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .side #top10 table { font-size: 13px; }
 .side #top10 th, .side #top10 td { padding: 7px 6px; }
+
+.play-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 14px; }
+.play-nav .ghost-btn:disabled { opacity: 0.4; cursor: default; background: var(--surface); color: var(--navy); }
+.plays-list tbody tr.selected td { background: #e3f6ec; }
+.plays-list tbody tr.selected td:first-child { box-shadow: inset 4px 0 0 var(--ghost); }
+.plays-list tbody tr.selected td.name { color: var(--text); font-weight: 600; }
+.field .ghost-halo { opacity: 0.35; }

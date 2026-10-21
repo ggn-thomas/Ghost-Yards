@@ -130,7 +130,7 @@ export default function Field({ play, selectedId }) {
             {kind === 'ghost' ? (
               <g transform={`translate(${cx} ${cy})`}>
                 <circle className="ghost-halo" r="3.2" filter="url(#ghost-glow)" />
-                <g transform="scale(1.6)">
+                <g transform="scale(2.4)">
                   <GhostShape className="ghost-float" />
                 </g>
                 <title>{p.name}</title>
