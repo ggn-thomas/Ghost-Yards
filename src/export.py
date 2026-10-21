@@ -45,7 +45,7 @@ def qbs_json(qbs):
 
 def selected_keys(plays, ranked, matrix):
     keys = set(zip(ranked.gp_game.dropna().astype(int), ranked.gp_play.dropna().astype(int)))
-    top = plays.nlargest(TOP_GLOBAL, "ghost_yards")
+    top = plays[~plays.playDescription.str.contains("No Play", regex=False)].nlargest(TOP_GLOBAL, "ghost_yards")
     keys |= set(zip(top.gameId, top.playId))
     keys |= {(e["gameId"], e["playId"]) for cell in matrix.values() for e in cell["examples"]}
     return keys

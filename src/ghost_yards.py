@@ -48,7 +48,8 @@ def rank_players(df, plays, players):
     r["rank_in_pos"] = r.groupby("pos").ghost_yards_per_game.rank(ascending=False, method="min").astype(int)
     pct = r.groupby("pos").ghost_yards_per_game.rank(pct=True)
     r["score10"] = np.ceil(pct * 10).astype(int)
-    best = plays.sort_values("ghost_yards", ascending=False).drop_duplicates("ghost_id").set_index("ghost_id")
+    shown = plays[~plays.playDescription.str.contains("No Play", regex=False)]
+    best = shown.sort_values("ghost_yards", ascending=False).drop_duplicates("ghost_id").set_index("ghost_id")
     r = r.join(best[["gameId", "playId"]].rename(columns={"gameId": "gp_game", "playId": "gp_play"}))
     return r.reset_index().sort_values(["pos", "rank_in_pos"])
 
@@ -75,8 +76,9 @@ def matrix(plays):
     for d_key, d_val, asc in [("good", "Bon choix", True), ("bad", "Mauvais choix", False)]:
         for e_key, e_val in [("above", "Au-dessus de l'attendu"), ("below", "En dessous")]:
             c = plays[(plays.decision == d_val) & (plays.execution == e_val)].sort_values("gap", ascending=asc)
+            shown = c[~c.playDescription.str.contains("No Play", regex=False)]
             cells[f"{d_key}_{e_key}"] = {"count": int(len(c)),
-                                         "examples": c[["gameId", "playId"]].head(N_EXAMPLES).to_dict("records")}
+                                         "examples": shown[["gameId", "playId"]].head(N_EXAMPLES).to_dict("records")}
     return cells
 
 
