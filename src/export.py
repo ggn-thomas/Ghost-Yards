@@ -29,6 +29,14 @@ def records(df):
             for row in df.to_dict("records")]
 
 
+def text(v):
+    return None if pd.isna(v) else v
+
+
+def is_route(role):
+    return isinstance(role, str) and role.lower() == "pass route"
+
+
 def id_or_none(v):
     return None if pd.isna(v) else int(v)
 
@@ -73,8 +81,8 @@ def frames(keys):
 
 
 def play_json(p, frame):
-    rows = [{"nflId": id_or_none(r.nflId), "name": r.displayName, "x": clean(r.x), "y": clean(r.y),
-             "role": r.pff_role, **({"xyards": clean(r.xyards)} if r.pff_role == "Pass Route" else {})}
+    rows = [{"nflId": id_or_none(r.nflId), "name": text(r.displayName), "x": clean(r.x), "y": clean(r.y),
+             "role": text(r.pff_role), **({"xyards": clean(r.xyards)} if is_route(r.pff_role) else {})}
             for r in frame.itertuples()]
     return {"gameId": int(p.gameId), "playId": int(p.playId), "description": p.playDescription,
             "coverage": p.pff_passCoverageType if isinstance(p.pff_passCoverageType, str) else "Other",
@@ -93,9 +101,9 @@ def plays_json(plays, keys):
 def game_frames(f):
     # {"names": {nflId: name}, "plays": {playId: [frame rows]}} for one game
     named = f.dropna(subset=["nflId"]).drop_duplicates("nflId")
-    names = {str(int(r.nflId)): r.displayName for r in named.itertuples()}
-    rows = {str(pid): [{"nflId": id_or_none(r.nflId), "x": clean(r.x), "y": clean(r.y), "role": r.pff_role,
-                        **({"xyards": clean(r.xyards)} if r.pff_role == "Pass Route" else {})}
+    names = {str(int(r.nflId)): text(r.displayName) for r in named.itertuples()}
+    rows = {str(pid): [{"nflId": id_or_none(r.nflId), "x": clean(r.x), "y": clean(r.y), "role": text(r.pff_role),
+                        **({"xyards": clean(r.xyards)} if is_route(r.pff_role) else {})}
                        for r in g.itertuples()] for pid, g in f.groupby("playId")}
     return {"names": names, "plays": rows}
 

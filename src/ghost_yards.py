@@ -31,6 +31,8 @@ def per_play(df, threshold=DECISION_THRESHOLD):
     p = p.join(alts[["nflId", "xyards"]].rename(columns={"nflId": "ghost_id", "xyards": "ghost_xyards"}))
     p["gap"] = (p.ghost_xyards - p.target_xyards).fillna(0)
     p["ghost_yards"] = p.gap.clip(lower=0)
+    # no ghost when the open alternative offered no more than the target
+    p.loc[p.gap <= 0, ["ghost_id", "ghost_xyards"]] = np.nan
     p["decision"] = decision(p.gap, threshold)
     p["execution"] = np.where(p.actual_yards > p.target_xyards, "Au-dessus de l'attendu", "En dessous")
     return p.reset_index()
@@ -48,7 +50,7 @@ def rank_players(df, plays, players):
     r["rank_in_pos"] = r.groupby("pos").ghost_yards_per_game.rank(ascending=False, method="min").astype(int)
     pct = r.groupby("pos").ghost_yards_per_game.rank(pct=True)
     r["score10"] = np.ceil(pct * 10).astype(int)
-    shown = plays[~plays.playDescription.str.contains("No Play", regex=False)]
+    shown = plays[(plays.ghost_yards > 0) & ~plays.playDescription.str.contains("No Play", regex=False)]
     best = shown.sort_values("ghost_yards", ascending=False).drop_duplicates("ghost_id").set_index("ghost_id")
     r = r.join(best[["gameId", "playId"]].rename(columns={"gameId": "gp_game", "playId": "gp_play"}))
     return r.reset_index().sort_values(["pos", "rank_in_pos"])
