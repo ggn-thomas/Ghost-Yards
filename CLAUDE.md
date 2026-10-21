@@ -74,7 +74,8 @@ git clone --depth 1 https://github.com/ThompsonJamesBliss/nfl-big-data-bowl-regi
 - Vérifier visuellement avant de faire confiance à un chiffre.
 
 ## Git
-- Commits petits et fréquents sur `main`. `git pull --rebase` avant de push.
+- **Jamais de push direct sur `main`.** Une branche `feat/<sujet>` par tâche, puis une PR vers `main`.
+- Titre de PR et message de commit préfixés `feat: ...`. PR petites et fréquentes, rebase sur `main` avant de merger.
 - L'algo ne touche pas à `web/` sauf `web/public/data.json`. Le front ne touche pas à `src/`.
 
 ## Planning
