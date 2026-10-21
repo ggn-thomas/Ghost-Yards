@@ -35,7 +35,8 @@ afficher un petit bandeau « données factices ». Le champ disparaîtra dans le
 
 ```json
 {
-  "meta": {"model_mae": 0.0, "baseline_mae": 0.0, "n_plays": 0, "int_value": -10, "decision_threshold": 3},
+  "meta": {"model_mae": 0.0, "baseline_mae": 0.0, "n_plays": 0, "int_value": -10, "decision_threshold": 5,
+           "headline": {"leaders": {"WR": {"name": "", "team": "", "ghost_yards_per_game": 0.0}}, "pct_good_choice": 0.0, "pct_bad_choice": 0.0}},
   "players": [{
     "nflId": 0, "name": "", "team": "", "pos": "WR|TE|RB",
     "games": 0, "routes": 0, "ghost_yards_per_game": 0.0,
@@ -44,7 +45,7 @@ afficher un petit bandeau « données factices ». Le champ disparaîtra dans le
   }],
   "qbs": [{
     "nflId": 0, "name": "", "team": "", "passes": 0,
-    "good_choice_pct": 0.0, "ghost_yards_ceded_per_game": 0.0
+    "good_choice_pct": 0.0, "good_vs_league": 0.0, "ghost_yards_ceded_per_game": 0.0
   }],
   "matrix": {
     "good_above": {"count": 0, "examples": [{"gameId": 0, "playId": 0}]},
@@ -71,6 +72,8 @@ Règles :
   - `x` de 0 à 120 (en-buts de 0 à 10 et de 110 à 120), `y` de 0 à 53,3.
   - `role` vaut `"Pass"` (QB), `"Pass Route"` (receveur), `"Pass Block"` (bloqueur), `"Pass Rush"` ou `"Coverage"` (défense), ou `"football"` (ballon, `nflId: null`).
   - `xyards` n'existe que pour les `"Pass Route"`.
+- `ghost_id` peut être `null` (aucun receveur plus ouvert que la cible : `ghost_yards = 0`, « Bon choix »). Ne rien dessiner en vert dans ce cas.
+- QB : afficher `good_vs_league` (écart à la moyenne en points) plutôt que le % brut. Mettre en avant les rangs, pas les yards absolus.
 - `matrix` : `good_*` = bon choix, `bad_*` = mauvais choix ; `*_above` = au-dessus de l'attendu, `*_below` = en dessous. Les « Discutable » sont exclus.
 
 ## Ce que la page doit contenir (par ordre de priorité)

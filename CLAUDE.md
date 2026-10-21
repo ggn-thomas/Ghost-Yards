@@ -58,12 +58,15 @@ git clone --depth 1 https://github.com/ThompsonJamesBliss/nfl-big-data-bowl-regi
 - Validation : MAE du modèle contre MAE de la baseline (moyenne), calibration par décile,
   contrôle « à profondeur égale, plus de séparation ⇒ plus de xYards ».
 - Un seul receveur peut recevoir le ballon : **une action = au plus une valeur de ghost yards**.
-  `ghost_id` = receveur non ciblé avec le plus de xYards ; `ghost_yards` = `max(0, gap)`, attribué **uniquement** à `ghost_id`.
+  `ghost_id` = receveur non ciblé **plus ouvert que la cible** (`sep1` supérieur) avec le plus de xYards ;
+  sans alternative plus ouverte : `gap = 0`, pas de fantôme. Ce filtre corrige le biais du modèle vers les receveurs profonds.
+  `ghost_yards` = `max(0, gap)`, attribué **uniquement** à `ghost_id`.
   **Ne jamais additionner les receveurs d'une même action.** Les totaux (joueur, QB, équipe, accroche) sont des sommes de `ghost_yards` par action.
 - Joueurs : somme des ghost yards des actions où il est `ghost_id` / matchs joués, minimum 100 tracés,
   classement par poste, `score10` = décile dans le poste.
 - Wording : « yards attendus laissés sur la table », jamais « yards perdus » (ce sont des espérances).
-- Verdict du QB : `gap = max xYards des non ciblés - xYards_cible`. Bon choix si ≤ 0, Discutable si < 3, Mauvais choix si ≥ 3.
+- Verdict du QB : `gap` = xYards du fantôme - xYards_cible. Bon choix si ≤ 0, Discutable si < 5, Mauvais choix si ≥ 5.
+  QB présentés **par rapport à la moyenne de la ligue** (`good_vs_league`). Mettre en avant les rangs, pas les yards absolus.
   Exécution = yards réels - xYards_cible.
   **Ne jamais comparer des yards réels aux xYards d'une alternative.**
 - Bonus (narration seulement) : max des xYards sur les 10 frames avant le lancer. Ne pas l'utiliser dans la stat.
@@ -92,6 +95,9 @@ git clone --depth 1 https://github.com/ThompsonJamesBliss/nfl-big-data-bowl-regi
 ## README (livrable)
 3 à 5 phrases, la 1re = l'insight avec un chiffre. Puis : lien Vercel, capture, commande pour relancer, MAE contre baseline.
 Limites : ouvert au lancer ≠ ouvert à l'arrivée ; pression et progression de lecture non modélisées ; 8 semaines de 2021 ;
-valeur des interceptions arbitraire ; verdict indicatif sur une action, fiable en agrégé.
+valeur des interceptions arbitraire ; verdict indicatif sur une action, fiable en agrégé ;
+**biais de sélection** : le modèle n'apprend que sur les passes lancées, il surévalue les options profondes
+(sans filtre, son meilleur choix coïncide avec celui du QB 24 % du temps, contre 22 % au hasard) ;
+d'où la règle « fantôme plus ouvert que la cible » ; le décile le plus haut des xYards est surestimé (17,4 prédits pour 14,1 réels).
 Travaux liés : EHCP (Deshpande & Evans, 2019), ESPN Open Score, Prime Targets (Prime Video) :
 « Prime Targets montre en direct qui est ouvert ; Ghost Yards fait le bilan de ce que ça a coûté. »
