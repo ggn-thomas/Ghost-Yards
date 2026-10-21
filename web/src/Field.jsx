@@ -1,10 +1,14 @@
 // Terrain SVG du play au moment du lancer. Coordonnées déjà normalisées (attaque vers +x).
+import { GhostShape } from './Ghost.jsx'
+
 const W = 120
 const H = 53.3
 const flip = (y) => H - y // SVG : y vers le bas -> on garde l'orientation habituelle
 
+const STRIPES = Array.from({ length: 20 }, (_, i) => 10 + i * 5).filter((_, i) => i % 2 === 0)
 const YARD_LINES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110]
 const NUMBERS = [20, 30, 40, 50, 60, 70, 80, 90, 100]
+const VECTOR_SECONDS = 0.5 // longueur des flèches de mouvement = déplacement sur 0,5 s
 
 function shortName(name) {
   if (!name) return ''
@@ -12,18 +16,25 @@ function shortName(name) {
   return parts[parts.length - 1]
 }
 
+// Projection d'affichage : dir en degrés, 0° = +y, 90° = +x (convention NGS).
+function vectorEnd(p) {
+  const rad = (p.dir * Math.PI) / 180
+  const len = p.s * VECTOR_SECONDS
+  return [p.x + len * Math.sin(rad), p.y + len * Math.cos(rad)]
+}
+
+function kindOf(p, play) {
+  if (p.role === 'football') return 'ball'
+  if (p.nflId === play.target_id) return 'target'
+  if (p.nflId === play.ghost_id) return 'ghost'
+  if (p.role === 'Pass Route') return 'receiver'
+  if (p.role === 'Coverage' || p.role === 'Pass Rush') return 'defense'
+  return 'offense'
+}
+
 export default function Field({ play }) {
   const qb = play.frame.find((p) => p.role === 'Pass')
   const target = play.frame.find((p) => p.nflId === play.target_id)
-
-  const playerClass = (p) => {
-    if (p.role === 'football') return 'dot ball'
-    if (p.nflId === play.target_id) return 'dot target'
-    if (p.nflId === play.ghost_id) return 'dot ghost'
-    if (p.role === 'Pass Route') return 'dot receiver'
-    if (p.role === 'Coverage' || p.role === 'Pass Rush') return 'dot defense'
-    return 'dot offense'
-  }
 
   // Ordre de dessin : défense et ligne d'abord, receveurs ensuite, ballon au-dessus.
   const order = { 'Pass Block': 0, 'Pass Rush': 0, Coverage: 1, Pass: 2, 'Pass Route': 3, football: 4 }
@@ -38,11 +49,19 @@ export default function Field({ play }) {
         <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
           <path d="M0,0 L10,5 L0,10 z" className="arrow-head" />
         </marker>
+        <marker id="vec" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M0,1 L9,5 L0,9 z" fill="context-stroke" />
+        </marker>
       </defs>
 
       <rect className="turf" x="0" y="0" width={W} height={H} />
+      {STRIPES.map((x) => (
+        <rect key={x} className="stripe" x={x} y="0" width="5" height={H} />
+      ))}
       <rect className="endzone" x="0" y="0" width="10" height={H} />
       <rect className="endzone" x="110" y="0" width="10" height={H} />
+      <text className="endzone-label" transform={`translate(5 ${H / 2}) rotate(-90)`}>GHOST</text>
+      <text className="endzone-label" transform={`translate(115 ${H / 2}) rotate(90)`}>YARDS</text>
 
       {YARD_LINES.map((x) => (
         <line key={x} className="yard-line" x1={x} x2={x} y1="0" y2={H} />
@@ -59,6 +78,35 @@ export default function Field({ play }) {
 
       <line className="los" x1={play.los_x} x2={play.los_x} y1="0" y2={H} />
 
+      {/* Traînée optionnelle (positions avant le lancer) */}
+      {play.frame
+        .filter((p) => Array.isArray(p.trail) && p.trail.length > 1)
+        .map((p) => (
+          <polyline
+            key={`trail-${p.nflId}`}
+            className={`trail trail-${kindOf(p, play)}`}
+            points={[...p.trail, [p.x, p.y]].map(([x, y]) => `${x},${flip(y)}`).join(' ')}
+          />
+        ))}
+
+      {/* Vecteurs de mouvement optionnels */}
+      {play.frame
+        .filter((p) => p.role !== 'football' && p.s != null && p.dir != null && p.s > 0.5)
+        .map((p) => {
+          const [ex, ey] = vectorEnd(p)
+          return (
+            <line
+              key={`vec-${p.nflId}`}
+              className={`vector vector-${kindOf(p, play)}`}
+              x1={p.x}
+              y1={flip(p.y)}
+              x2={ex}
+              y2={flip(ey)}
+              markerEnd="url(#vec)"
+            />
+          )
+        })}
+
       {qb && target && (
         <line
           className="throw"
@@ -73,21 +121,30 @@ export default function Field({ play }) {
       {players.map((p, i) => {
         const cx = p.x
         const cy = flip(p.y)
-        const isGhost = p.nflId === play.ghost_id
-        const isKey = p.nflId === play.target_id || isGhost
+        const kind = kindOf(p, play)
+        const isKey = kind === 'target' || kind === 'ghost'
         return (
           <g key={p.nflId ?? `ball-${i}`}>
-            {isGhost && <circle className="ghost-halo" cx={cx} cy={cy} r="2.6" filter="url(#ghost-glow)" />}
-            <circle className={playerClass(p)} cx={cx} cy={cy} r={p.role === 'football' ? 0.55 : 1.05}>
-              <title>{p.name}</title>
-            </circle>
+            {kind === 'ghost' ? (
+              <g transform={`translate(${cx} ${cy})`}>
+                <circle className="ghost-halo" r="3.2" filter="url(#ghost-glow)" />
+                <g transform="scale(1.6)">
+                  <GhostShape className="ghost-float" />
+                </g>
+                <title>{p.name}</title>
+              </g>
+            ) : (
+              <circle className={`dot ${kind}`} cx={cx} cy={cy} r={kind === 'ball' ? 0.55 : 1.05}>
+                <title>{p.name}</title>
+              </circle>
+            )}
             {p.role === 'Pass Route' && p.xyards != null && (
-              <text className={`xyds ${isKey ? (isGhost ? 'xyds-ghost' : 'xyds-target') : ''}`} x={cx + 1.8} y={cy + 0.6}>
+              <text className={`xyds ${isKey ? `xyds-${kind}` : ''}`} x={cx + 2.4} y={cy + 0.6}>
                 {p.xyards.toFixed(1)} xYds
               </text>
             )}
             {isKey && (
-              <text className="pname" x={cx + 1.8} y={cy - 1.4}>
+              <text className="pname" x={cx + 2.4} y={cy - 1.5}>
                 {shortName(p.name)}
               </text>
             )}
