@@ -92,7 +92,7 @@ git clone --depth 1 https://github.com/ThompsonJamesBliss/nfl-big-data-bowl-regi
 4. Vrai `data.json` livré au front : 15h00. Interface et Vercel : avant 15h30.
 5. README, capture d'écran, push final : avant 15h50.
 
-## README (livrable)
+## README (livrable, 3 à 5 lignes ; le détail va dans algo.md)
 3 à 5 phrases, la 1re = l'insight avec un chiffre. Puis : lien Vercel, capture, commande pour relancer, MAE contre baseline.
 Limites : ouvert au lancer ≠ ouvert à l'arrivée ; pression et progression de lecture non modélisées ; 8 semaines de 2021 ;
 valeur des interceptions arbitraire ; verdict indicatif sur une action, fiable en agrégé ;
